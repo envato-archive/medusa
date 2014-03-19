@@ -21,7 +21,7 @@ module Medusa #:nodoc:
       @listeners = []
       @options = opts.fetch(:options) { "" }
 
-      load_worker_initializer
+      $0 = "[medusa] Worker"
 
       @runner_event_listeners = Array(opts.fetch(:runner_listeners) { nil })
       @runner_event_listeners.select{|l| l.is_a? String}.each do |l|
