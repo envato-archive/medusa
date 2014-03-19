@@ -30,12 +30,7 @@ module Medusa #:nodoc:
 
       $stdout.sync = true
 
-      load_runner_initializer
-
       runner_begin
-
-      # trace "Booted. Configuring..."
-      # Medusa.after_fork.call
 
       trace 'Booted. Sending Request for file'
       @io.write RequestFile.new
@@ -44,26 +39,6 @@ module Medusa #:nodoc:
       rescue => ex
         trace ex.to_s
         raise ex
-      ensure
-        load_runner_finalizer
-      end
-    end
-
-    def load_runner_initializer
-      if File.exist?('./medusa_runner_init.rb')
-        trace('Requiring medusa_runner_init.rb')
-        load './medusa_runner_init.rb'
-      else
-        trace('medusa_runner_init.rb not present')
-      end
-    end
-
-    def load_runner_finalizer
-      if File.exist?('./medusa_runner_final.rb')
-        trace('Requiring medusa_runner_final.rb')
-        load './medusa_runner_final.rb'
-      else
-        trace('medusa_runner_final.rb not present')
       end
     end
 

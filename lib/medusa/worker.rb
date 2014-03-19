@@ -38,15 +38,6 @@ module Medusa #:nodoc:
 
       @runners.each{|r| Process.wait r[:pid] }
     end
-
-    def load_worker_initializer
-      if File.exist?('./medusa_worker_init.rb')
-        trace('Requiring medusa_worker_init.rb')
-        require 'medusa_worker_init'
-      else
-        trace('medusa_worker_init.rb not present')
-      end
-    end
     
     # message handling methods
 
