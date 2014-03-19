@@ -4,12 +4,17 @@ module RSpec
     module Formatters
       class MedusaFormatter < ProgressFormatter
         def example_passed(example)
+          output.puts "RSPECPASSED: #{example.description}"
         end
 
         def example_pending(example)
+          output.puts "RSPECPENDING: #{example.description}"
         end
 
         def example_failed(example)
+          output.puts "RSPECFAILED: #{example.description}"
+          dump_failure_info(example)
+          output.puts "--ENDRSPECFAILED--"
         end
 
         # Stifle the post-test summary

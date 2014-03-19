@@ -75,7 +75,7 @@ module Medusa #:nodoc:
 
       output = "." if output == ""
 
-      @io.write Results.new(:output => output, :file => file)
+      @io.write Results.new(:output => output.to_s, :file => file)
       return output
     end
 
@@ -152,30 +152,7 @@ module Medusa #:nodoc:
 
     # run all the Specs in an RSpec file (NOT IMPLEMENTED)
     def run_rspec_file(file)
-      # pull in rspec
-      begin
-        require 'rspec'
-        require 'medusa/spec/medusa_formatter'
-        # Ensure we override rspec's at_exit
-        RSpec::Core::Runner.disable_autorun!
-      rescue LoadError => ex
-        return ex.to_s
-      end
-      medusa_output = StringIO.new
-
-      config = [
-        '-f', 'RSpec::Core::Formatters::MedusaFormatter',
-        file
-      ]
-
-      RSpec.instance_variable_set(:@world, nil)
-      RSpec::Core::Runner.run(config, medusa_output, medusa_output)
-
-      medusa_output.rewind
-      output = medusa_output.read.chomp
-      output = "" if output.gsub("\n","") =~ /^\.*$/
-
-      return output
+      Drivers::RspecDriver.new.execute(file)
     end
 
     # run all the scenarios in a cucumber feature file
