@@ -1,3 +1,4 @@
+require 'medusa/version'
 require 'medusa/trace'
 require 'medusa/pipe'
 require 'medusa/ssh'

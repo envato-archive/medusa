@@ -1,6 +1,5 @@
 require 'test/unit'
 require 'test/unit/testresult'
-Test::Unit.run = true
 
 module Medusa #:nodoc:
   # Medusa class responsible for running test files.
@@ -24,15 +23,19 @@ module Medusa #:nodoc:
 
       @io = opts.fetch(:io) { raise "No IO Object" }
       @verbose = opts.fetch(:verbose) { false }
+      @verbose = true
       @event_listeners = Array( opts.fetch( :runner_listeners ) { nil } )
       @options = opts.fetch(:options) { "" }
       @directory = get_directory
 
       $stdout.sync = true
+
+      load_runner_initializer
+
       runner_begin
 
-      trace "Booted. Configuring..."
-      Medusa.after_fork.call
+      # trace "Booted. Configuring..."
+      # Medusa.after_fork.call
 
       trace 'Booted. Sending Request for file'
       @io.write RequestFile.new
@@ -41,6 +44,26 @@ module Medusa #:nodoc:
       rescue => ex
         trace ex.to_s
         raise ex
+      ensure
+        load_runner_finalizer
+      end
+    end
+
+    def load_runner_initializer
+      if File.exist?('./medusa_runner_init.rb')
+        trace('Requiring medusa_runner_init.rb')
+        load './medusa_runner_init.rb'
+      else
+        trace('medusa_runner_init.rb not present')
+      end
+    end
+
+    def load_runner_finalizer
+      if File.exist?('./medusa_runner_final.rb')
+        trace('Requiring medusa_runner_final.rb')
+        load './medusa_runner_final.rb'
+      else
+        trace('medusa_runner_final.rb not present')
       end
     end
 
@@ -61,6 +84,8 @@ module Medusa #:nodoc:
     # Run a test file and report the results
     def run_file(file)
       trace "Running file: #{file}"
+
+      $0 = "[medusa] Running file #{file}"
 
       output = ""
       if file =~ /_spec.rb$/i
@@ -124,7 +149,7 @@ module Medusa #:nodoc:
     # Run all the Test::Unit Suites in a ruby file
     def run_test_unit_file(file)
       begin
-        require @directory + file
+        require file
       rescue LoadError => ex
         trace "#{file} does not exist [#{ex.to_s}]"
         return ex.to_s
@@ -132,6 +157,8 @@ module Medusa #:nodoc:
         trace "Error requiring #{file} [#{ex.to_s}]"
         return format_ex_in_file(file, ex)
       end
+
+
       output = []
       @result = Test::Unit::TestResult.new
       @result.add_listener(Test::Unit::TestResult::FAULT) do |value|

@@ -53,7 +53,7 @@ class WorkerTest < Test::Unit::TestCase
       pipe.write(Medusa::Messages::Master::Shutdown.new)
 
       assert File.exists?(target_file)
-      assert_equal "HYDRA", File.read(target_file)
+      assert_equal "MEDUSA", File.read(target_file)
     end
   end
   include WorkerTestHelper
