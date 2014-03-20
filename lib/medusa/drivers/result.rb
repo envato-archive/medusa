@@ -1,22 +1,14 @@
 module Medusa
   module Drivers
     class Result
-      def initialize
-        @passed = 0
-        @failed = []
-        @pending = []
-      end
+      def parse_json(json_string)
+        results = JSON(json_string)
 
-      def inc_passed!
-        @passed += 1
-      end
+        @passed = results[:summary][:success_count]
+        @failed = results[:summary][:failure_count]
+        @pending = results[:summary][:pending_count]
 
-      def inc_failed!(name, output)
-        @failed << [name, output]
-      end
-
-      def inc_pending!(name)
-        @pending << name
+        @test_results = results[:tests]
       end
 
       def fatal!(message, backtrace)

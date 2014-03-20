@@ -17,7 +17,8 @@ module Medusa
         medusa_output = StringIO.new
 
         config = [
-          '-f', 'RSpec::Core::Formatters::MedusaFormatter',
+          '-f',
+          'RSpec::Core::Formatters::MedusaFormatter',
           file
         ]
 
@@ -28,19 +29,7 @@ module Medusa
           RSpec::Core::Runner.run(config, medusa_output, medusa_output)
 
           medusa_output.rewind
-          output = JSON(medusa_output.read.chomp)
-
-          output[:tests].each do |results|
-            status = results[:status]
-
-            if status == :passed
-              result.inc_passed!
-            elsif status == :pending
-              result.inc_pending!($1)
-            elsif status == :failed
-              result.inc_failed!($1, results[:exception])
-            end
-          end
+          result.parse_json(medusa_output.read.chomp)
         rescue => ex
           result.fatal!(ex.message, ex.backtrace)
         end
