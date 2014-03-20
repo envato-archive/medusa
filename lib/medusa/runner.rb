@@ -31,9 +31,6 @@ module Medusa #:nodoc:
       $stdout.sync = true
       runner_begin
 
-      trace "Booted. Configuring..."
-      Medusa.after_fork.call
-
       trace 'Booted. Sending Request for file'
       @io.write RequestFile.new
       begin
@@ -162,7 +159,8 @@ module Medusa #:nodoc:
       medusa_output = StringIO.new
 
       config = [
-        '-f', 'RSpec::Core::Formatters::MedusaFormatter',
+        '-f',
+        'RSpec::Core::Formatters::MedusaFormatter',
         file
       ]
 
@@ -170,8 +168,7 @@ module Medusa #:nodoc:
       RSpec::Core::Runner.run(config, medusa_output, medusa_output)
 
       medusa_output.rewind
-      output = medusa_output.read.chomp
-      output = "" if output.gsub("\n","") =~ /^\.*$/
+      output = JSON(medusa_output.read.chomp)
 
       return output
     end
