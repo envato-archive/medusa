@@ -11,6 +11,16 @@ module Medusa #:nodoc:
     traceable('WORKER')
 
     attr_reader :runners
+
+    def self.setup(&block)
+      @setup ||= []
+      @setup << block
+    end
+
+    def self.setups
+      @setup || []
+    end
+
     # Create a new worker.
     # * io: The IO object to use to communicate with the master
     # * num_runners: The number of runners to launch
@@ -22,6 +32,8 @@ module Medusa #:nodoc:
       @options = opts.fetch(:options) { "" }
 
       $0 = "[medusa] Worker"
+
+      Worker.setups.each { |proc| proc.call }
 
       @runner_event_listeners = Array(opts.fetch(:runner_listeners) { nil })
       @runner_event_listeners.select{|l| l.is_a? String}.each do |l|
