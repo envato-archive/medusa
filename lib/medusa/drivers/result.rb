@@ -19,8 +19,8 @@ module Medusa
         @pending << name
       end
 
-      def fatal!(output)
-        @fatal = output
+      def fatal!(message, backtrace)
+        @fatal = [message, backtrace]
       end
 
       def to_s

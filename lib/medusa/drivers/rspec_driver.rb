@@ -21,23 +21,27 @@ module Medusa
           file
         ]
 
-        RSpec.instance_variable_set(:@world, nil)
-        RSpec::Core::Runner.run(config, medusa_output, medusa_output)
-
-        medusa_output.rewind
-
         result = Result.new
 
-        output = medusa_output.read.chomp.split("\n")
+        begin
+          RSpec.instance_variable_set(:@world, nil)
+          RSpec::Core::Runner.run(config, medusa_output, medusa_output)
 
-        output.each_with_index do |line, index|
-          if line =~ /RSPECPASSED/
-            result.inc_passed!
-          elsif line =~ /RSPECPENDING: (.*)/
-            result.inc_pending!($1)
-          elsif line =~ /RSPECFAILED: (.*)/
-            result.inc_failed!($1, grab_exception(output, index + 1))
+          medusa_output.rewind
+
+          output = medusa_output.read.chomp.split("\n")
+
+          output.each_with_index do |line, index|
+            if line =~ /RSPECPASSED/
+              result.inc_passed!
+            elsif line =~ /RSPECPENDING: (.*)/
+              result.inc_pending!($1)
+            elsif line =~ /RSPECFAILED: (.*)/
+              result.inc_failed!($1, grab_exception(output, index + 1))
+            end
           end
+        rescue => ex
+          result.fatal!(ex.message, ex.backtrace)
         end
 
         return result
