@@ -27,19 +27,28 @@ module Medusa #:nodoc:
       @event_listeners = Array( opts.fetch( :runner_listeners ) { nil } )
       @options = opts.fetch(:options) { "" }
       @directory = get_directory
+      @start_immediately = opts.fetch(:start_immediately) { true }
 
       $stdout.sync = true
 
+      $0 = "[medusa] Runner waiting...."
+
       runner_begin
 
-      trace 'Booted. Sending Request for file'
-      @io.write RequestFile.new
+      trace 'Booted.'
+
+      # start_processing! if @start_immediately
+
       begin
         process_messages
       rescue => ex
         trace ex.to_s
         raise ex
       end
+    end
+
+    def start_processing!
+      @io.write RequestFile.new
     end
 
     def reg_trap_sighup
@@ -76,6 +85,9 @@ module Medusa #:nodoc:
       output = "." if output == ""
 
       @io.write Results.new(:output => output.to_s, :file => file)
+
+      $0 = "[medusa] Runner waiting...."
+
       return output
     end
 
@@ -108,6 +120,7 @@ module Medusa #:nodoc:
             trace "\t#{message.inspect}"
             message.handle(self)
           else
+            trace "Ignored message #{message.class}"
             @io.write Ping.new
           end
         rescue IOError => ex
