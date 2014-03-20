@@ -99,7 +99,9 @@ module Medusa #:nodoc:
 
     # Message handling
     def worker_begin(worker)
+      trace "Running worker_begin on #{@event_listeners.inspect} event listeners."
       @event_listeners.each {|l| l.worker_begin(worker) }
+      trace "Running worker_begin on event listeners DONE."
     end
 
     # Send a file down to a worker.
@@ -180,11 +182,13 @@ module Medusa #:nodoc:
       sync = Sync.new(worker, @sync, @verbose)
 
       runners = worker.fetch('runners') { raise "You must specify the number of runners"  }
+      # strace -o /tmp/strace -ff -s 1024 
       command = worker.fetch('command') {
-        "RAILS_ENV=#{@environment} ruby -e \"require 'rubygems'; require 'medusa'; Medusa::Worker.new(:io => Medusa::Stdio.new, :runners => #{runners}, :verbose => #{@verbose}, :runner_listeners => \'#{@string_runner_event_listeners}\', :runner_log_file => \'#{@runner_log_file}\' );\""
+        "bundle --local --path .bundle > /dev/null; RAILS_ENV=#{@environment} bundle exec ruby -e \"require 'rubygems'; require 'medusa'; require './lib/medusa/environment'; Medusa::Worker.new(:io => Medusa::Stdio.new, :runners => #{runners}, :verbose => #{@verbose}, :runner_listeners => \'#{@string_runner_event_listeners}\', :runner_log_file => \'#{@runner_log_file}\' );\""
       }
 
       trace "Booting SSH worker"
+      trace %Q(Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", #{sync.remote_dir.inspect}, #{command.inspect}))
       ssh = Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", sync.remote_dir, command)
       return { :io => ssh, :idle => false, :type => :ssh, :connect => sync.connect }
     end
