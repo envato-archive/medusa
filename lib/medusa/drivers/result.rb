@@ -1,7 +1,7 @@
 module Medusa
   module Drivers
     class Result
-      def parse_json(json_string)
+      def parse_medusa_formatter_results(json_string)
         results = JSON(json_string)
 
         @passed = results[:summary][:success_count]

@@ -29,7 +29,7 @@ module Medusa
           RSpec::Core::Runner.run(config, medusa_output, medusa_output)
 
           medusa_output.rewind
-          result.parse_json(medusa_output.read.chomp)
+          result.parse_medusa_formatter_results(medusa_output.read.chomp)
         rescue => ex
           result.fatal!(ex.message, ex.backtrace)
         end
