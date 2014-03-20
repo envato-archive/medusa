@@ -4,8 +4,6 @@ module RSpec
   module Core
     module Formatters
       class MedusaFormatter < BaseFormatter
-        attr_accessor :results
-
         def initialize(output)
           super(output)
           @results = { :tests => [] }
