@@ -8,34 +8,22 @@ module RSpec
 
         def initialize(output)
           super(output)
-          @results = { :tests => [] }
+          @results = []
         end
 
         def example_passed(example)
           super(example)
-          @results[:tests] << example_to_hash(example)
+          @results = example_to_hash(example)
         end
 
         def example_pending(example)
           super(example)
-          @results[:tests] << example_to_hash(example)
+          @results = example_to_hash(example)
         end
 
         def example_failed(example)
           super(example)
-          @results[:tests] << example_to_hash(example)
-        end
-
-        def dump_summary(duration, example, failure, pending)
-          super(duration, example, failure, pending)
-
-          results[:summary] = {
-            :duration => @duration,
-            :example_count => @example_count,
-            :failure_count => @failure_count,
-            :pending_count => @pending_count,
-            :success_count => @example_count - @failure_count - @pending_count,
-          }
+          @results = example_to_hash(example)
         end
 
         def start_dump
@@ -56,7 +44,7 @@ module RSpec
           {
             :description => example.description,
             :full_description => example.full_description,
-            :status => example.execution_result[:status].to_sym,
+            :status => example.execution_result[:status],
             :file_path => example.metadata[:file_path],
             :line_number  => example.metadata[:line_number],
             :run_time => example.execution_result[:run_time],

@@ -22,17 +22,11 @@ module Medusa
           file
         ]
 
-        result = Result.new
+        RSpec.instance_variable_set(:@world, nil)
+        RSpec::Core::Runner.run(config, medusa_output, medusa_output)
 
-        begin
-          RSpec.instance_variable_set(:@world, nil)
-          RSpec::Core::Runner.run(config, medusa_output, medusa_output)
-
-          medusa_output.rewind
-          result.parse_medusa_formatter_results(medusa_output.read.chomp)
-        rescue => ex
-          result.fatal!(ex.message, ex.backtrace)
-        end
+        medusa_output.rewind
+        result = medusa_output.read.chomp
 
         return result
       end

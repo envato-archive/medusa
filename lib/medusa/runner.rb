@@ -37,7 +37,7 @@ module Medusa #:nodoc:
 
       trace 'Booted.'
 
-      # start_processing! if @start_immediately
+      start_processing! if @start_immediately
 
       begin
         process_messages
@@ -81,8 +81,6 @@ module Medusa #:nodoc:
       else
         output = run_test_unit_file(file)
       end
-
-      output = "." if output == ""
 
       @io.write Results.new(:output => output.to_s, :file => file)
 
