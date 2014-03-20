@@ -95,9 +95,7 @@ module Medusa #:nodoc:
       yield self if block_given?
 
       # Ensure we override rspec's at_exit
-      if defined?(RSpec)
-        RSpec::Core::Runner.disable_autorun!
-      end
+      require 'medusa/spec/autorun_override'
 
       unless @serial
         @config = find_config_file
@@ -316,9 +314,9 @@ module Medusa #:nodoc:
       ssh_opts = worker.fetch('ssh_opts') { '' }
       writer, reader, error = popen3("ssh -tt #{ssh_opts} #{worker['connect']} ")
       writer.write("cd #{worker['directory']}\n")
-      writer.write "echo BEGIN HYDRA\n"
+      writer.write "echo BEGIN MEDUSA\n"
       writer.write(command + "\r")
-      writer.write "echo END HYDRA\n"
+      writer.write "echo END MEDUSA\n"
       writer.write("exit\n")
       writer.close
       ignoring = true
@@ -328,11 +326,11 @@ module Medusa #:nodoc:
         if line =~ /^rake aborted!$/
           passed = false
         end
-        if line =~ /echo END HYDRA$/
+        if line =~ /echo END MEDUSA$/
           ignoring = true
         end
         $stdout.write "#{worker['connect']}: #{line}\n" unless ignoring
-        if line == 'BEGIN HYDRA'
+        if line == 'BEGIN MEDUSA'
           ignoring = false
         end
       end

@@ -19,7 +19,7 @@ class MasterTest < Test::Unit::TestCase
         :files => [test_file]
       )
       assert File.exists?(target_file)
-      assert_equal "HYDRA", File.read(target_file)
+      assert_equal "MEDUSA", File.read(target_file)
     end
 
     # this test simulates what happens when we have 2 tests with the same
@@ -48,7 +48,7 @@ class MasterTest < Test::Unit::TestCase
       assert_match /superclass mismatch for class SyncTest/, listener.output[conflicting_test_file]
       assert_match conflicting_test_file, listener.output[conflicting_test_file]
       assert File.exists?(target_file)
-      assert_equal "HYDRA", File.read(target_file)
+      assert_equal "MEDUSA", File.read(target_file)
     end
 
     should "run a spec with pending examples" do
@@ -58,14 +58,14 @@ class MasterTest < Test::Unit::TestCase
         :listeners => [progress_bar]
       )
       assert File.exists?(target_file)
-      assert_equal "HYDRA", File.read(target_file)
+      assert_equal "MEDUSA", File.read(target_file)
       assert_equal false, progress_bar.instance_variable_get('@errors')
     end
 
     should "generate a report" do
       Medusa::Master.new(:files => [test_file])
       assert File.exists?(target_file)
-      assert_equal "HYDRA", File.read(target_file)
+      assert_equal "MEDUSA", File.read(target_file)
       report_file = File.join(Dir.consistent_tmpdir, 'medusa_heuristics.yml')
       assert File.exists?(report_file)
       assert report = YAML.load_file(report_file)
@@ -78,7 +78,7 @@ class MasterTest < Test::Unit::TestCase
         :workers => [ { :type => :local, :runners => 2 } ]
       )
       assert File.exists?(target_file)
-      assert_equal "HYDRA"*6, File.read(target_file)
+      assert_equal "MEDUSA"*6, File.read(target_file)
     end
 
     # The test being run sleeps for 5 seconds. So, if this was run in
@@ -122,7 +122,7 @@ class MasterTest < Test::Unit::TestCase
         }]
       )
       assert File.exists?(target_file)
-      assert_equal "HYDRA", File.read(target_file)
+      assert_equal "MEDUSA", File.read(target_file)
     end
 
     should "run a test with config from a yaml file" do
@@ -131,7 +131,7 @@ class MasterTest < Test::Unit::TestCase
         :config => File.join(File.dirname(__FILE__), 'fixtures', 'config.yml')
       )
       assert File.exists?(target_file)
-      assert_equal "HYDRA", File.read(target_file)
+      assert_equal "MEDUSA", File.read(target_file)
     end
 
     should "synchronize a test file over ssh with rsync" do
@@ -293,7 +293,7 @@ class MasterTest < Test::Unit::TestCase
         Medusa::Master.new(
               :files => [test_file],
               :runner_log_file => runner_log_file,
-              :verbose => false
+              :verbose => true
             )
       end
       Process.waitpid @pid

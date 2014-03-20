@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'test/unit'
 gem 'shoulda', '2.10.3'
-gem 'rspec', '2.0.0.beta.19'
+gem 'rspec'
 require 'shoulda'
 require 'tmpdir'
 require "stringio"
@@ -11,7 +11,7 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'medusa'
 
 # Since Medusa turns off testing, we have to turn it back on
-Test::Unit.run = false
+# Test::Unit.run = false
 
 class Test::Unit::TestCase
   def target_file

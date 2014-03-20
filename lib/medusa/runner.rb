@@ -1,6 +1,5 @@
 require 'test/unit'
 require 'test/unit/testresult'
-Test::Unit.run = true
 
 module Medusa #:nodoc:
   # Medusa class responsible for running test files.
@@ -24,21 +23,32 @@ module Medusa #:nodoc:
 
       @io = opts.fetch(:io) { raise "No IO Object" }
       @verbose = opts.fetch(:verbose) { false }
+      @verbose = true
       @event_listeners = Array( opts.fetch( :runner_listeners ) { nil } )
       @options = opts.fetch(:options) { "" }
       @directory = get_directory
+      @start_immediately = opts.fetch(:start_immediately) { true }
 
       $stdout.sync = true
+
+      $0 = "[medusa] Runner waiting...."
+
       runner_begin
 
-      trace 'Booted. Sending Request for file'
-      @io.write RequestFile.new
+      trace 'Booted.'
+
+      # start_processing! if @start_immediately
+
       begin
         process_messages
       rescue => ex
         trace ex.to_s
         raise ex
       end
+    end
+
+    def start_processing!
+      @io.write RequestFile.new
     end
 
     def reg_trap_sighup
@@ -59,6 +69,8 @@ module Medusa #:nodoc:
     def run_file(file)
       trace "Running file: #{file}"
 
+      $0 = "[medusa] Running file #{file}"
+
       output = ""
       if file =~ /_spec.rb$/i
         output = run_rspec_file(file)
@@ -72,7 +84,10 @@ module Medusa #:nodoc:
 
       output = "." if output == ""
 
-      @io.write Results.new(:output => output, :file => file)
+      @io.write Results.new(:output => output.to_s, :file => file)
+
+      $0 = "[medusa] Runner waiting...."
+
       return output
     end
 
@@ -105,6 +120,7 @@ module Medusa #:nodoc:
             trace "\t#{message.inspect}"
             message.handle(self)
           else
+            trace "Ignored message #{message.class}"
             @io.write Ping.new
           end
         rescue IOError => ex
@@ -121,7 +137,7 @@ module Medusa #:nodoc:
     # Run all the Test::Unit Suites in a ruby file
     def run_test_unit_file(file)
       begin
-        require @directory + file
+        require file
       rescue LoadError => ex
         trace "#{file} does not exist [#{ex.to_s}]"
         return ex.to_s
@@ -129,6 +145,8 @@ module Medusa #:nodoc:
         trace "Error requiring #{file} [#{ex.to_s}]"
         return format_ex_in_file(file, ex)
       end
+
+
       output = []
       @result = Test::Unit::TestResult.new
       @result.add_listener(Test::Unit::TestResult::FAULT) do |value|
@@ -147,30 +165,7 @@ module Medusa #:nodoc:
 
     # run all the Specs in an RSpec file (NOT IMPLEMENTED)
     def run_rspec_file(file)
-      # pull in rspec
-      begin
-        require 'rspec'
-        require 'medusa/spec/medusa_formatter'
-        # Ensure we override rspec's at_exit
-        RSpec::Core::Runner.disable_autorun!
-      rescue LoadError => ex
-        return ex.to_s
-      end
-      medusa_output = StringIO.new
-
-      config = [
-        '-f',
-        'RSpec::Core::Formatters::MedusaFormatter',
-        file
-      ]
-
-      RSpec.instance_variable_set(:@world, nil)
-      RSpec::Core::Runner.run(config, medusa_output, medusa_output)
-
-      medusa_output.rewind
-      output = JSON(medusa_output.read.chomp)
-
-      return output
+      Drivers::RspecDriver.new.execute(file)
     end
 
     # run all the scenarios in a cucumber feature file

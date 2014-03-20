@@ -11,6 +11,16 @@ module Medusa #:nodoc:
     traceable('WORKER')
 
     attr_reader :runners
+
+    def self.setup(&block)
+      @setup ||= []
+      @setup << block
+    end
+
+    def self.setups
+      @setup || []
+    end
+
     # Create a new worker.
     # * io: The IO object to use to communicate with the master
     # * num_runners: The number of runners to launch
@@ -21,7 +31,9 @@ module Medusa #:nodoc:
       @listeners = []
       @options = opts.fetch(:options) { "" }
 
-      load_worker_initializer
+      $0 = "[medusa] Worker"
+
+      Worker.setups.each { |proc| proc.call }
 
       @runner_event_listeners = Array(opts.fetch(:runner_listeners) { nil })
       @runner_event_listeners.select{|l| l.is_a? String}.each do |l|
@@ -37,15 +49,6 @@ module Medusa #:nodoc:
       process_messages
 
       @runners.each{|r| Process.wait r[:pid] }
-    end
-
-    def load_worker_initializer
-      if File.exist?('./medusa_worker_init.rb')
-        trace('Requiring medusa_worker_init.rb')
-        require 'medusa_worker_init'
-      else
-        trace('medusa_worker_init.rb not present')
-      end
     end
     
     # message handling methods

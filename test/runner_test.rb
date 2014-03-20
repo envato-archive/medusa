@@ -54,13 +54,13 @@ class RunnerTest < Test::Unit::TestCase
       runner = Medusa::Runner.new(:io => File.new('/dev/null', 'w'))
       runner.run_file(rspec_file)
       assert File.exists?(target_file)
-      assert_equal "HYDRA", File.read(target_file)
+      assert_equal "MEDUSA", File.read(target_file)
 
       FileUtils.rm_f(target_file)
       
       runner.run_file(alternate_rspec_file)
       assert File.exists?(alternate_target_file)
-      assert_equal "HYDRA", File.read(alternate_target_file)
+      assert_equal "MEDUSA", File.read(alternate_target_file)
       assert !File.exists?(target_file), "Tests are double running!"
     end
 
@@ -71,7 +71,7 @@ class RunnerTest < Test::Unit::TestCase
       runner.run_file(rspec_file_with_pending)
 
       assert File.exists?(target_file)
-      assert_equal "HYDRA", File.read(target_file)
+      assert_equal "MEDUSA", File.read(target_file)
 
       FileUtils.rm_f(target_file)
     end
@@ -85,13 +85,13 @@ class RunnerTest < Test::Unit::TestCase
           runner = Medusa::Runner.new(:io => File.new('/dev/null', 'w'))
           runner.run_file(cucumber_feature_file)
           assert File.exists?(target_file)
-          assert_equal "HYDRA", File.read(target_file)
+          assert_equal "MEDUSA", File.read(target_file)
 
           FileUtils.rm_f(target_file)
 
           runner.run_file(alternate_cucumber_feature_file)
           assert File.exists?(alternate_target_file)
-          assert_equal "HYDRA", File.read(alternate_target_file)
+          assert_equal "MEDUSA", File.read(alternate_target_file)
           assert !File.exists?(target_file)
         end
         Process.wait pid
@@ -120,7 +120,7 @@ class RunnerTest < Test::Unit::TestCase
 
       # ensure it ran
       assert File.exists?(target_file)
-      assert_equal "HYDRA", File.read(target_file)
+      assert_equal "MEDUSA", File.read(target_file)
     end
 
     context "using runner events" do
@@ -183,7 +183,7 @@ class RunnerTest < Test::Unit::TestCase
       
       # ensure it ran
       assert File.exists?(target_file)
-      assert_equal "HYDRA", File.read(target_file)
+      assert_equal "MEDUSA", File.read(target_file)
     end
 
     def run_the_runner(pipe, listeners = [])

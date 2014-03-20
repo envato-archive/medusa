@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "medusa"
-  spec.version       = "0.0.1"
+  spec.version       = "0.0.9"
   spec.authors       = ["Nick Gauthier", "Sean St. Quentin"]
   spec.email         = ["ngauthier@gmail.com", "sean.st.quentin@envato.com"]
   spec.description   = %q{Spread your tests over multiple machines to test your code faster.}
@@ -20,4 +20,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "shoulda", "~> 2.10.3"
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "cucumber"
+  spec.add_development_dependency "pry"
 end

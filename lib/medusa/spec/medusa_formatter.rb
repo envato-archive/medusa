@@ -1,4 +1,5 @@
 require 'rspec/core/formatters/base_formatter'
+
 module RSpec
   module Core
     module Formatters
@@ -55,7 +56,7 @@ module RSpec
           {
             :description => example.description,
             :full_description => example.full_description,
-            :status => example.execution_result[:status],
+            :status => example.execution_result[:status].to_sym,
             :file_path => example.metadata[:file_path],
             :line_number  => example.metadata[:line_number],
             :run_time => example.execution_result[:run_time],
