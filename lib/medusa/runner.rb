@@ -71,15 +71,14 @@ module Medusa #:nodoc:
 
       $0 = "[medusa] Running file #{file}"
 
-      output = ""
-      if file =~ /_spec.rb$/i
-        output = run_rspec_file(file)
+      output = if file =~ /_spec.rb$/i
+        run_rspec_file(file)
       elsif file =~ /.feature$/i
-        output = run_cucumber_file(file)
+        run_cucumber_file(file)
       elsif file =~ /.js$/i or file =~ /.json$/i
-        output = run_javascript_file(file)
+        run_javascript_file(file)
       else
-        output = run_test_unit_file(file)
+        run_test_unit_file(file)
       end
 
       @io.write Results.new(:output => output.to_s, :file => file)
@@ -168,46 +167,7 @@ module Medusa #:nodoc:
 
     # run all the scenarios in a cucumber feature file
     def run_cucumber_file(file)
-      medusa_response = StringIO.new
-
-      options = @options if @options.is_a?(Array)
-      options = @options.split(' ') if @options.is_a?(String)
-
-      fork_id = fork do
-        files = [file]
-        dev_null = StringIO.new
-
-        args = [file, options].flatten.compact
-        medusa_response.puts args.inspect
-
-        results_directory = "#{Dir.pwd}/results/features"
-        FileUtils.mkdir_p results_directory
-
-        require 'cucumber/cli/main'
-        require 'medusa/cucumber/formatter'
-        require 'medusa/cucumber/partial_html'
-
-        Cucumber.logger.level = Logger::INFO
-
-        cuke = Cucumber::Cli::Main.new(args, dev_null, dev_null)
-        cuke.configuration.formats << ['Cucumber::Formatter::Medusa', medusa_response]
-
-        html_output = cuke.configuration.formats.select{|format| format[0] == 'html'}
-        if html_output
-          cuke.configuration.formats.delete(html_output)
-          cuke.configuration.formats << ['Medusa::Formatter::PartialHtml', "#{results_directory}/#{file.split('/').last}.html"]
-        end
-
-        cuke_runtime = Cucumber::Runtime.new(cuke.configuration)
-        cuke_runtime.run!
-        exit 1 if cuke_runtime.results.failure?
-      end
-      Process.wait fork_id
-
-      medusa_response.puts "." if not $?.exitstatus == 0
-      medusa_response.rewind
-
-      medusa_response.read
+      Drivers::CucumberDriver.new.execute(file)
     end
 
     def run_javascript_file(file)
