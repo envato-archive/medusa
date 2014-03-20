@@ -95,9 +95,7 @@ module Medusa #:nodoc:
       yield self if block_given?
 
       # Ensure we override rspec's at_exit
-      if defined?(RSpec)
-        RSpec::Core::Runner.disable_autorun!
-      end
+      require 'medusa/spec/autorun_override'
 
       unless @serial
         @config = find_config_file
