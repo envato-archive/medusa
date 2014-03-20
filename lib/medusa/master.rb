@@ -127,24 +127,27 @@ module Medusa #:nodoc:
          exception_message =~ /PGError: ERROR(.*)[Dd]eadlock/ or
          exception_message =~ /Mysql::Error: SAVEPOINT(.*)does not exist: ROLLBACK/ or
          exception_message =~ /Mysql::Error: Deadlock found/
+
         trace "Deadlock detected running [#{message.file}]. Will retry at the end"
         @files.push(message.file)
-        send_file(worker)
       else
-        @incomplete_files.delete_at(@incomplete_files.index(message.file))
-        trace "#{@incomplete_files.size} Files Remaining"
-        @event_listeners.each { |l| l.file_end(message.file, message.output) }
         @failed_files << message.file if results['status'] == 'failure'
+      end
+    end
 
-        if @incomplete_files.empty?
-          @workers.each do |worker|
-            @event_listeners.each{ |l| l.worker_end(worker) }
-          end
+    def file_complete(message, _worker)
+      trace "INF #{@incomplete_files.inspect} #{message.file.inspect}"
+      @incomplete_files.delete_at(@incomplete_files.index(message.file))
+      trace "#{@incomplete_files.size} Files Remaining"
 
-          shutdown_all_workers
-        else
-          send_file(worker)
+      @event_listeners.each { |l| l.file_end(message.file, "") }
+
+      if @incomplete_files.empty?
+        @workers.each do |worker|
+          @event_listeners.each{ |l| l.worker_end(worker) }
         end
+
+        shutdown_all_workers
       end
     end
 

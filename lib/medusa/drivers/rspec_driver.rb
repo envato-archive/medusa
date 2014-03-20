@@ -14,7 +14,11 @@ module Medusa
           return ex.to_s
         end
 
-        medusa_output = StringIO.new
+        medusa_output = EventIO.new
+
+        medusa_output.on_output do |message|
+          message_bus.write Messages::Runner::Results.new(output: message, file: file)
+        end
 
         config = [
           '-f',
@@ -24,11 +28,6 @@ module Medusa
 
         RSpec.instance_variable_set(:@world, nil)
         RSpec::Core::Runner.run(config, medusa_output, medusa_output)
-
-        medusa_output.rewind
-        result = medusa_output.read.chomp
-
-        return result
       end
     end
   end

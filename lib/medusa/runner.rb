@@ -81,11 +81,10 @@ module Medusa #:nodoc:
         run_test_unit_file(file)
       end
 
-      @io.write Results.new(:output => output.to_s, :file => file)
-
       $0 = "[medusa] Runner waiting...."
 
-      return output
+      @io.write FileComplete.new(file: file)
+      @io.write RequestFile.new
     end
 
     # Stop running
@@ -162,7 +161,7 @@ module Medusa #:nodoc:
 
     # run all the Specs in an RSpec file (NOT IMPLEMENTED)
     def run_rspec_file(file)
-      Drivers::RspecDriver.new.execute(file)
+      Drivers::RspecDriver.new(@io).execute(file)
     end
 
     # run all the scenarios in a cucumber feature file

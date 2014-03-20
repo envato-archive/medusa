@@ -13,21 +13,21 @@ module RSpec
 
         def example_passed(example)
           super(example)
-          @results = example_to_hash(example)
+          output.puts example_to_hash(example)
         end
 
         def example_pending(example)
           super(example)
-          @results = example_to_hash(example)
+          output.puts example_to_hash(example)
         end
 
         def example_failed(example)
           super(example)
-          @results = example_to_hash(example)
+          output.puts example_to_hash(example)
         end
 
         def start_dump
-          output.puts @results.to_json
+          # output.puts @results.to_json
         end
 
         private

@@ -14,12 +14,26 @@ module Medusa #:nodoc:
         attr_accessor :output
         # The file that was run
         attr_accessor :file
+
         def serialize #:nodoc:
           super(:output => @output, :file => @file)
         end
+
         def handle(worker, runner) #:nodoc:
           worker.relay_results(self, runner)
         end
+      end
+
+      class FileComplete < Medusa::Message
+        attr_accessor :file
+
+        def handle(worker, runner)
+          worker.file_complete(self, runner)
+        end
+
+        def serialize #:nodoc:
+          super(:file => @file)
+        end        
       end
 
       # Message a runner sends to a worker to verify the connection
