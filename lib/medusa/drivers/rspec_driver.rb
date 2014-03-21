@@ -27,6 +27,7 @@ module Medusa
         ]
 
         RSpec.instance_variable_set(:@world, nil)
+
         RSpec::Core::Runner.run(config, medusa_output, medusa_output)
       end
     end

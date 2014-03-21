@@ -131,18 +131,21 @@ module Medusa #:nodoc:
         trace "Deadlock detected running [#{message.file}]. Will retry at the end"
         @files.push(message.file)
       else
-        @failed_files << message.file if results['status'] == 'failure'
+        if results['status'] == 'failure' || results['status'] == 'fatal'
+          @failed_files << message.file
+        end
+        @event_listeners.each { |l| l.result_received(message.file, results) }
       end
     end
 
     def file_complete(message, _worker)
-      trace "INF #{@incomplete_files.inspect} #{message.file.inspect}"
       @incomplete_files.delete_at(@incomplete_files.index(message.file))
       trace "#{@incomplete_files.size} Files Remaining"
 
-      @event_listeners.each { |l| l.file_end(message.file, "") }
+      @event_listeners.each { |l| l.file_end(message.file) }
 
       if @incomplete_files.empty?
+
         @workers.each do |worker|
           @event_listeners.each{ |l| l.worker_end(worker) }
         end
@@ -211,6 +214,7 @@ module Medusa #:nodoc:
 
     def process_messages
       Thread.abort_on_exception = true
+      mutex = Mutex.new
 
       trace "Processing Messages"
       trace "Workers: #{@workers.inspect}"
@@ -228,7 +232,9 @@ module Medusa #:nodoc:
               # if it exists and its for me.
               # SSH gives us back echoes, so we need to ignore our own messages
               if message and !message.class.to_s.index("Worker").nil?
-                message.handle(self, worker)
+                mutex.synchronize do
+                  message.handle(self, worker)
+                end
               end
             rescue IOError
               trace "lost Worker [#{worker.inspect}]"

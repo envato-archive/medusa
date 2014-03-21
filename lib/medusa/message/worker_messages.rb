@@ -23,7 +23,7 @@ module Medusa #:nodoc:
 
         def serialize #:nodoc:
           super(:file => @file)
-        end        
+        end
       end
 
       # Message telling the Runner to run a file

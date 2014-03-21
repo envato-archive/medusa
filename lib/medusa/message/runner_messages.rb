@@ -15,12 +15,25 @@ module Medusa #:nodoc:
         # The file that was run
         attr_accessor :file
 
+        def to_s
+          super + " file: #{file}"
+        end
+
         def serialize #:nodoc:
           super(:output => @output, :file => @file)
         end
 
         def handle(worker, runner) #:nodoc:
           worker.relay_results(self, runner)
+        end
+
+        def self.fatal_error(file, exception)
+          new(file: file, output: { description: "Fatal Error", status: "fatal", file_path: file, exception: {
+              :class => exception.class.name,
+              :message => exception.message,
+              :backtrace => exception.backtrace,
+            }
+          }.to_json)
         end
       end
 

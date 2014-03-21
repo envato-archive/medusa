@@ -32,7 +32,11 @@ module Medusa #:nodoc:
       end
 
       # Fired when a file is finished
-      def file_end(file, output)
+      def file_end(file)
+      end
+
+      # Fired every time we receive a result from a runner.
+      def result_received(file, result)
       end
     end
   end

@@ -71,14 +71,18 @@ module Medusa #:nodoc:
 
       $0 = "[medusa] Running file #{file}"
 
-      output = if file =~ /_spec.rb$/i
-        run_rspec_file(file)
-      elsif file =~ /.feature$/i
-        run_cucumber_file(file)
-      elsif file =~ /.js$/i or file =~ /.json$/i
-        run_javascript_file(file)
-      else
-        run_test_unit_file(file)
+      begin
+        if file =~ /_spec.rb$/i
+          run_rspec_file(file)
+        elsif file =~ /.feature$/i
+          run_cucumber_file(file)
+        elsif file =~ /.js$/i or file =~ /.json$/i
+          run_javascript_file(file)
+        else
+          run_test_unit_file(file)
+        end
+      rescue => ex
+        @io.write Results.fatal_error(file, ex)
       end
 
       $0 = "[medusa] Runner waiting...."
