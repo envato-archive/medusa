@@ -118,11 +118,9 @@ module Medusa #:nodoc:
 
     # Process the results coming back from the worker.
     def process_results(worker, message)
-      results = JSON(message.output)
+      result = Medusa::Drivers::Result.parse_json(message.output)
 
-      results['exception'] ||= {}
-      exception_message = results['exception']['message']
-
+      exception_message = result.exception
       if exception_message =~ /ActiveRecord::StatementInvalid(.*)[Dd]eadlock/ or
          exception_message =~ /PGError: ERROR(.*)[Dd]eadlock/ or
          exception_message =~ /Mysql::Error: SAVEPOINT(.*)does not exist: ROLLBACK/ or
@@ -131,10 +129,10 @@ module Medusa #:nodoc:
         trace "Deadlock detected running [#{message.file}]. Will retry at the end"
         @files.push(message.file)
       else
-        if results['status'] == 'failure' || results['status'] == 'fatal'
+        if result.failure? || result.fatal?
           @failed_files << message.file
         end
-        @event_listeners.each { |l| l.result_received(message.file, results) }
+        @event_listeners.each { |l| l.result_received(message.file, result) }
       end
     end
 

@@ -1,22 +1,35 @@
 module Medusa
   module Drivers
     class Result
-      def parse_medusa_formatter_results(json_string)
-        results = JSON(json_string)
+      attr_accessor :description, :status, :run_time, :exception, :exception_backtrace
 
-        @passed = results[:summary][:success_count]
-        @failed = results[:summary][:failure_count]
-        @pending = results[:summary][:pending_count]
-
-        @test_results = results[:tests]
+      def self.parse_json(json_string)
+        attributes = JSON(json_string)
+        Result.new(attributes)
       end
 
-      def fatal!(message, backtrace)
-        @fatal = [message, backtrace]
+      def initialize(attributes)
+        @description = attributes['description']
+        @status = attributes['status'].to_sym
+        @run_time = attributes['run_time']
+        @exception = attributes['exception']
+        @exception_backtrace = attributes['exception_backtrace']
       end
 
-      def to_s
-        puts "Passed: #{@passed}, Failed: #{@failed.length}, Pending: #{@pending.length}, Fatal Error: #{!!@fatal}"
+      def success?
+        status == :success
+      end
+
+      def failure?
+        status == :failure
+      end
+
+      def pending?
+        status == :pending
+      end
+
+      def fatal?
+        status == :fatal
       end
     end
   end
