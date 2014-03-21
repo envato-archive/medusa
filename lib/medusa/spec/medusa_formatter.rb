@@ -4,11 +4,8 @@ module RSpec
   module Core
     module Formatters
       class MedusaFormatter < BaseFormatter
-        attr_accessor :results
-
         def initialize(output)
           super(output)
-          @results = []
         end
 
         def example_passed(example)
@@ -26,29 +23,15 @@ module RSpec
           output.puts example_to_hash(example)
         end
 
-        def start_dump
-          # output.puts @results.to_json
-        end
-
         private
 
         def example_to_hash(example)
-          if exception_data = example.exception
-            exception = {
-              :class => exception_data.class.name,
-              :message => exception_data.message,
-              :backtrace => exception_data.backtrace,
-            }
-          end
-
           {
             :description => example.description,
-            :full_description => example.full_description,
             :status => example.execution_result[:status],
-            :file_path => example.metadata[:file_path],
-            :line_number  => example.metadata[:line_number],
             :run_time => example.execution_result[:run_time],
-            :exception => exception,
+            :exception => example.exception.try(:message),
+            :exception_backtrace => example.exception.try(:backtrace),
           }
         end
       end
