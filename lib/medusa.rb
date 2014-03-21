@@ -20,3 +20,5 @@ require 'medusa/drivers/rspec_driver'
 require 'medusa/drivers/result'
 require 'medusa/drivers/cucumber_driver'
 require 'medusa/drivers/event_io'
+require 'medusa/teamcity/messenger'
+
