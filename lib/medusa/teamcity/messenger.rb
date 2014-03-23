@@ -9,20 +9,20 @@ module Medusa
         @dispatcher.start_dispatcher
       end
 
-      def notify_test_suite_started
-        message = "Starting #{count} tests"
+      def notify_test_suite_started(file)
+        message = "Starting file #{file}"
         send_message(Rake::TeamCity::MessageFactory.create_progress_message(message))
       end
 
-      def notify_test_suite_finished
-        test_name = ''
+      def notify_test_suite_finished(file)
+        test_name = file
         flow_id_suffix = ''
         send_message(Rake::TeamCity::MessageFactory.create_close_block(test_name, :test, flow_id_suffix))
 
-        totals = ''
-        send_message(Rake::TeamCity::MessageFactory.create_message(totals))
+        # totals = ''
+        # send_message(Rake::TeamCity::MessageFactory.create_message(totals))
 
-        duration = 0
+        duration = ''
         message = "Finished in #{duration} seconds"
         send_message(Rake::TeamCity::MessageFactory.create_progress_message(message))
       end
@@ -36,26 +36,42 @@ module Medusa
         send_message(Rake::TeamCity::MessageFactory.create_open_block(test_name, :test, flow_id_suffix))
       end
 
-      def notify_pass
-        notify_test_finished
-        send_message(Rake::TeamCity::MessageFactory.create_test_output_message(test_name, true, output, flow_id_suffix))
-      end
+      def notify_test_finished(file, result)
+        test_name = result.description
+        flow_id_suffix = ''
+        send_message(Rake::TeamCity::MessageFactory.create_close_block(test_name, :test, flow_id_suffix))
 
-      def notify_failure
-        notify_test_finished
-        send_message(Rake::TeamCity::MessageFactory.create_test_problem_message(test_name, message, failure_description, flow_id_suffix))
-      end
-
-      def notify_pending
-        notify_test_finished
-        send_message(Rake::TeamCity::MessageFactory.create_test_ignored_message(message, test_name, flow_id_suffix))
+        if result.success?
+          notify_success(result)
+        elsif result.failure?
+          notify_failure(result)
+        elsif result.pending?
+          notify_pending(result)
+        end
       end
 
       private
 
-      def notify_test_finished
-        test_name = ''
-        send_message(Rake::TeamCity::MessageFactory.create_close_block(test_name, :test, flowid_suffix))
+      def notify_success(result)
+        test_name = result.description
+        output = ''
+        flow_id_suffix = ''
+        send_message(Rake::TeamCity::MessageFactory.create_test_output_message(test_name, true, output, flow_id_suffix))
+      end
+
+      def notify_failure(result)
+        test_name = result.description
+        message = result.exception
+        failure_description = result.backtrace
+        flow_id_suffix = ''
+        send_message(Rake::TeamCity::MessageFactory.create_test_problem_message(test_name, message, failure_description, flow_id_suffix))
+      end
+
+      def notify_pending(result)
+        test_name = result.description
+        message = 'test pending'
+        flow_id_suffix = ''
+        send_message(Rake::TeamCity::MessageFactory.create_test_ignored_message(message, test_name, flow_id_suffix))
       end
 
       def send_message(msg)
