@@ -1,11 +1,3 @@
-if ENV["idea.rake.debug.sources"]
-  require 'src/test/unit/ui/teamcity/rakerunner_consts'
-  require 'src/test/unit/ui/teamcity/message_factory'
-else
-  require 'test/unit/ui/teamcity/rakerunner_consts'
-  require 'test/unit/ui/teamcity/message_factory'
-end
-
 module Medusa
   module Teamcity
     class Messenger
