@@ -33,18 +33,23 @@ module Medusa #:nodoc:
 
       $0 = "[medusa] Worker"
 
-      Worker.setups.each { |proc| proc.call }
+      begin
+        Worker.setups.each { |proc| proc.call }
 
-      @runner_event_listeners = Array(opts.fetch(:runner_listeners) { nil })
-      @runner_event_listeners.select{|l| l.is_a? String}.each do |l|
-        @runner_event_listeners.delete_at(@runner_event_listeners.index(l))
-        listener = eval(l)
-        @runner_event_listeners << listener if listener.is_a?(Medusa::RunnerListener::Abstract)
+        @runner_event_listeners = Array(opts.fetch(:runner_listeners) { nil })
+        @runner_event_listeners.select{|l| l.is_a? String}.each do |l|
+          @runner_event_listeners.delete_at(@runner_event_listeners.index(l))
+          listener = eval(l)
+          @runner_event_listeners << listener if listener.is_a?(Medusa::RunnerListener::Abstract)
+        end
+        @runner_log_file = opts.fetch(:runner_log_file) { nil }
+
+        boot_runners(opts.fetch(:runners) { 1 })
+        @io.write(Medusa::Messages::Worker::WorkerBegin.new)
+      rescue => ex
+        @io.write(Medusa::Messages::Worker::WorkerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace}"))
+        return
       end
-      @runner_log_file = opts.fetch(:runner_log_file) { nil }
-
-      boot_runners(opts.fetch(:runners) { 1 })
-      @io.write(Medusa::Messages::Worker::WorkerBegin.new)
 
       process_messages
 

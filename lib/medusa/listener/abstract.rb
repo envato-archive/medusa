@@ -19,6 +19,10 @@ module Medusa #:nodoc:
       def testing_end
       end
 
+      # Fired when a worker cannot startup due to an error.
+      def worker_startup_failure(worker, log)
+      end
+
       # Fired after runner processes have been started
       def worker_begin(worker)
       end
