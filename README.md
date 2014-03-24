@@ -11,6 +11,7 @@ Goals
 Phase 1 
 - Clean up inner workings to provide streaming feedback and centralised result format from the master.
 - Tidy the tests to the point that they run without any additional configuration.
+- Worker or Runner errors propogate to master.
  
 Phase 2
 - Separate changes made to work with rails into an easy-to-use setup/generator (bundle local, requiring environment, etc)
