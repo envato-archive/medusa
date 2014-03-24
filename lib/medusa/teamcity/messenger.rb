@@ -1,3 +1,8 @@
+begin
+  require 'test/unit/ui/teamcity/event_queue/messages_dispatcher'
+rescue LoadError
+end
+
 module Medusa
   module Teamcity
     class Messenger
