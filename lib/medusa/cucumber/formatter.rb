@@ -4,7 +4,7 @@ module Cucumber #:nodoc:
   module Formatter #:nodoc:
     # Medusa formatter for cucumber.
     # Stifles all output except error messages
-    # Based on the 
+    # Based on the
     class Medusa < Cucumber::Formatter::Progress
       # Removed the extra newlines here
       def after_features(features)
@@ -12,7 +12,7 @@ module Cucumber #:nodoc:
       end
 
       private
-      
+
       # Removed the file statistics
       def print_summary(features)
         print_steps(:pending)

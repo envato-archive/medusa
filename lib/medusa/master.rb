@@ -59,7 +59,7 @@ module Medusa #:nodoc:
       @workers = []
       @listeners = []
       @event_listeners = Array(opts.fetch('listeners') { nil } )
-      @event_listeners.select{|l| l.is_a? String}.each do |l|
+      @event_listeners.select { |l| l.is_a? String }.each do |l|
         @event_listeners.delete_at(@event_listeners.index(l))
         listener = eval(l)
         @event_listeners << listener if listener.is_a?(Medusa::Listener::Abstract)
@@ -80,14 +80,14 @@ module Medusa #:nodoc:
       end
 
       # default is one worker that is configured to use a pipe with one runner
-      worker_cfg = opts.fetch('workers') { [ { 'type' => 'local', 'runners' => 1} ] }
+      worker_cfg = opts.fetch('workers') { [ { 'type' => 'local', 'runners' => 1 } ] }
 
       trace "Initialized"
       trace "  Files:   (#{@files.inspect})"
       trace "  Workers: (#{worker_cfg.inspect})"
       trace "  Verbose: (#{@verbose.inspect})"
 
-      @event_listeners.each{|l| l.testing_begin(@files) }
+      @event_listeners.each{ |l| l.testing_begin(@files) }
 
       boot_workers worker_cfg
 
@@ -100,7 +100,7 @@ module Medusa #:nodoc:
     # Message handling
     def worker_begin(worker)
       trace "Running worker_begin on #{@event_listeners.inspect} event listeners."
-      @event_listeners.each {|l| l.worker_begin(worker) }
+      @event_listeners.each { |l| l.worker_begin(worker) }
       trace "Running worker_begin on event listeners DONE."
     end
 
@@ -109,7 +109,7 @@ module Medusa #:nodoc:
       f = @files.shift
       if f
         trace "Sending #{f.inspect}"
-        @event_listeners.each{|l| l.file_begin(f) }
+        @event_listeners.each{ |l| l.file_begin(f) }
         worker[:io].write(RunFile.new(:file => f))
       else
         trace "No more files to send"
@@ -207,7 +207,7 @@ module Medusa #:nodoc:
         worker[:io].write(Shutdown.new) if worker[:io]
         worker[:io].close if worker[:io]
       end
-      @listeners.each{|t| t.exit}
+      @listeners.each{ |t| t.exit}
     end
 
     def process_messages
@@ -242,17 +242,17 @@ module Medusa #:nodoc:
         end
       end
 
-      @listeners.each{|l| l.join}
-      @event_listeners.each{|l| l.testing_end}
+      @listeners.each{ |l| l.join }
+      @event_listeners.each{ |l| l.testing_end }
     end
 
     def sort_files_from_report
       if File.exists? heuristic_file
         report = YAML.load_file(heuristic_file)
         return unless report
-        sorted_files = report.sort{ |a,b|
+        sorted_files = report.sort do|a,b|
           b[1]['duration'] <=> a[1]['duration']
-        }.collect{|tuple| tuple[0]}
+        end.collect{ |tuple| tuple[0] }
 
         sorted_files.each do |f|
           @files.push(@files.delete_at(@files.index(f))) if @files.index(f)
