@@ -4,7 +4,7 @@ module Medusa
       def initialize(output = $stdout)
         super(output)
 
-        @teamcity_messenger = Medusa::Teamcity::Messenger
+        @teamcity_messenger = Medusa::Teamcity::Messenger.new
       end
 
       # Fired when a file is started
