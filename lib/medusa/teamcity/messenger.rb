@@ -1,84 +1,66 @@
 begin
-  require 'test/unit/ui/teamcity/event_queue/messages_dispatcher'
+  require '/Users/pablolee/src/rake-runner/rb/patch/bdd'
+  require '/Users/pablolee/src/rake-runner/rb/patch/common'
 rescue LoadError
 end
 
 module Medusa
   module Teamcity
     class Messenger
-      def initialize
-        @dispatcher = Rake::TeamCity.msg_dispatcher
-        @dispatcher.start_dispatcher
+      include ::Rake::TeamCity::RunnerCommon
+
+      def notify_example_group_started(example_group)
+        count = example_group.count
+        description = example_group.description
+
+        # send_msg(::Rake::TeamCity::MessageFactory.create_progress_message("Starting.. (#{count} examples)"))
+        # send_msg(::Rake::TeamCity::MessageFactory.create_suite_started(description, ''))
       end
 
-      def notify_test_suite_started(file)
-        message = "Starting file #{file}"
-        send_message(Rake::TeamCity::MessageFactory.create_progress_message(message))
+      def notify_example_group_finished(example_group)
+        description = example_group.description
+        # send_msg(::Rake::TeamCity::MessageFactory.create_suite_finished(description))
+        # send_msg(totals)
       end
 
-      def notify_test_suite_finished(file)
-        test_name = file
-        flow_id_suffix = ''
-        send_message(Rake::TeamCity::MessageFactory.create_close_block(test_name, :test, flow_id_suffix))
-
-        # totals = ''
-        # send_message(Rake::TeamCity::MessageFactory.create_message(totals))
-
-        duration = ''
-        message = "Finished in #{duration} seconds"
-        send_message(Rake::TeamCity::MessageFactory.create_progress_message(message))
+      def notify_example_started(example)
+        name = example.name
+        # send_msg(::Rake::TeamCity::MessageFactory.create_test_started(name, ''))
       end
 
-      def notify_test_started
-        flow_id_suffix = ''
-        send_message(Rake::TeamCity::MessageFactory.create_flow_message(Rake::TeamCity::MessageFactory::RAKE_FLOW_ID, '', flow_id_suffix))
+      def notify_example_finished(example)
+        name = example.name
+        duration = example.duration
 
-        test_name = ''
-        flow_id_suffix = ''
-        send_message(Rake::TeamCity::MessageFactory.create_open_block(test_name, :test, flow_id_suffix))
-      end
+        # if stdout_string && !stdout_string.empty?
+        #   send_msg(::Rake::TeamCity::MessageFactory.create_test_output_message(name, true, stdout_string))
+        # end
+        #
+        # if stderr_string && !stderr_string.empty?
+        #   send_msg(::Rake::TeamCity::MessageFactory.create_test_output_message(name, false, stderr_string))
+        # end
 
-      def notify_test_finished(file, result)
-        test_name = result.description
-        flow_id_suffix = ''
-        send_message(Rake::TeamCity::MessageFactory.create_close_block(test_name, :test, flow_id_suffix))
+        # notify_success or failure or pending
 
-        if result.success?
-          notify_success(result)
-        elsif result.failure?
-          notify_failure(result)
-        elsif result.pending?
-          notify_pending(result)
-        end
+        # send_msg(::Rake::TeamCity::MessageFactory.create_test_finished(name, duration, nil))
       end
 
       private
 
       def notify_success(result)
-        test_name = result.description
-        output = ''
-        flow_id_suffix = ''
-        send_message(Rake::TeamCity::MessageFactory.create_test_output_message(test_name, true, output, flow_id_suffix))
+
       end
 
       def notify_failure(result)
-        test_name = result.description
-        message = result.exception
-        failure_description = result.backtrace
-        flow_id_suffix = ''
-        send_message(Rake::TeamCity::MessageFactory.create_test_problem_message(test_name, message, failure_description, flow_id_suffix))
+        name = result.description
+        exception = result.exception
+        backtrace = result.exception_backtrace
+        # send_msg(::Rake::TeamCity::MessageFactory.create_test_failed(name, exception, backtrace))
       end
 
       def notify_pending(result)
-        test_name = result.description
-        message = 'test pending'
-        flow_id_suffix = ''
-        send_message(Rake::TeamCity::MessageFactory.create_test_ignored_message(message, test_name, flow_id_suffix))
-      end
-
-      def send_message(msg)
-        block = Proc.new { Rake::TeamCity.msg_dispatcher.log_one(msg) }
-        ENV[TEAMCITY_RAKERUNNER_LOG_RSPEC_XML_MSFS_KEY] ? SPEC_FORMATTER_LOG.log_block(msg.hash, msg, block) : block.call
+        name = result.description
+        # send_msg(::Rake::TeamCity::MessageFactory.create_test_ignored(name, ''))
       end
     end
   end
