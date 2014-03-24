@@ -61,7 +61,7 @@ module Medusa #:nodoc:
       @event_listeners = Array(opts.fetch('listeners') { nil } )
       @event_listeners.select { |l| l.is_a? String }.each do |l|
         @event_listeners.delete_at(@event_listeners.index(l))
-        listener = eval(l)
+        listener = l.constantize.new
         @event_listeners << listener if listener.is_a?(Medusa::Listener::Abstract)
       end
 
