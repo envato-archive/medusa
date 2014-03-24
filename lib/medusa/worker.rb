@@ -47,7 +47,7 @@ module Medusa #:nodoc:
         boot_runners(opts.fetch(:runners) { 1 })
         @io.write(Medusa::Messages::Worker::WorkerBegin.new)
       rescue => ex
-        @io.write(Medusa::Messages::Worker::WorkerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace}"))
+        @io.write(Medusa::Messages::Worker::WorkerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
         return
       end
 

@@ -16,6 +16,10 @@ module Medusa
         @exception_backtrace = attributes['exception_backtrace']
       end
 
+      def [](value)
+        self.send(value) if self.respond_to?(:value)
+      end
+
       def success?
         status == :success
       end

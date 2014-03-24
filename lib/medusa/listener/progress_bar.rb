@@ -11,14 +11,19 @@ module Medusa #:nodoc:
         @tests_executed = 0
         @fatals = 0
         @error_collection = []
-
+        @worker_failures = []
 
         @files = files.dup
 
         render_progress_bar
       end
 
+      def worker_startup_failure(worker, log)
+        @worker_failures << log
+      end
+
       def result_received(file, result)
+        
         if result['status'] == 'failure' || result['status'] == 'fatal'
           @errors = true
           @error_collection << [result['description'], result['file_path'], result['line_number'], result['exception']]
@@ -39,7 +44,6 @@ module Medusa #:nodoc:
       # Break the line
       def testing_end
         render_progress_bar
-        @output.write "\n"
         render_errors
       end
 
@@ -53,6 +57,15 @@ module Medusa #:nodoc:
           @output.write error['backtrace'].join("\n")
           @output.write "\n\n"
         end
+
+        if @worker_failures.length > 0
+          @output.write ("\n\n#{@worker_failures.length} worker(s) failed to startup\n\n")
+          @worker_failures.each do |log|
+            @output.write("#{log}\n\n")
+          end
+        end
+
+        @output.flush
       end
 
       def render_progress_bar

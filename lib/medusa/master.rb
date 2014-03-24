@@ -108,10 +108,6 @@ module Medusa #:nodoc:
       @worker_failures ||= 0
       @worker_failures += 1
       @event_listeners.each { |l| l.worker_startup_failure(worker, message.log) }
-
-      if @worker_failures == @workers.length
-        exit(-1)
-      end
     end
 
     # Send a file down to a worker.
