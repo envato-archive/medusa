@@ -16,9 +16,18 @@ Phase 1
 Phase 2
 - Separate changes made to work with rails into an easy-to-use setup/generator (bundle local, requiring environment, etc)
 - Running medusa on a new project should be as easy as running rspec.
+- Runner artifact propogation to master.
+  - Capture log file output for each runner.
+  - Capture process statistics for the spec's run.
+  - Capture shared resource load (DB load, etc)
+  - Cucumber screenshot failures, HTML, etc.
 
 Goals
 - Running medusa on CI should be as simple as one command.
-- Medusa should come with integrations for common CI platforms.
-- Ensure common build machines aren't flooded with too many runners.
-- Works with all the popular testing platforms
+- Integrations for common CI platforms - TeamCity, Bamboo, Buildbot, Jenkins, etc.
+- Integrations for common ruby platforms - Rails, Sinatra, etc.
+- Ensure shared build machines (i.e. CI nodes) aren't flooded with too many runners/workers.
+- Works with all the popular testing platforms.
+
+One day...
+- Worker/Runners for Java, Go, etc.
