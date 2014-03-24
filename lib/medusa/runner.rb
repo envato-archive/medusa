@@ -1,6 +1,3 @@
-require 'test/unit'
-require 'test/unit/testresult'
-
 module Medusa #:nodoc:
   # Medusa class responsible for running test files.
   #
