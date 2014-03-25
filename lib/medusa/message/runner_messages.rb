@@ -14,12 +14,39 @@ module Medusa #:nodoc:
         attr_accessor :output
         # The file that was run
         attr_accessor :file
+
+        def to_s
+          super + " file: #{file}"
+        end
+
         def serialize #:nodoc:
           super(:output => @output, :file => @file)
         end
+
         def handle(worker, runner) #:nodoc:
           worker.relay_results(self, runner)
         end
+
+        def self.fatal_error(file, exception)
+          new(file: file, output: { description: "Fatal Error", status: "fatal", file_path: file, exception: {
+              :class => exception.class.name,
+              :message => exception.message,
+              :backtrace => exception.backtrace,
+            }
+          }.to_json)
+        end
+      end
+
+      class FileComplete < Medusa::Message
+        attr_accessor :file
+
+        def handle(worker, runner)
+          worker.file_complete(self, runner)
+        end
+
+        def serialize #:nodoc:
+          super(:file => @file)
+        end        
       end
 
       # Message a runner sends to a worker to verify the connection

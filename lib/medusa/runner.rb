@@ -1,6 +1,3 @@
-require 'test/unit'
-require 'test/unit/testresult'
-
 module Medusa #:nodoc:
   # Medusa class responsible for running test files.
   #
@@ -37,7 +34,7 @@ module Medusa #:nodoc:
 
       trace 'Booted.'
 
-      # start_processing! if @start_immediately
+      start_processing! if @start_immediately
 
       begin
         process_messages
@@ -71,23 +68,24 @@ module Medusa #:nodoc:
 
       $0 = "[medusa] Running file #{file}"
 
-      output = if file =~ /_spec.rb$/i
-        run_rspec_file(file)
-      elsif file =~ /.feature$/i
-        run_cucumber_file(file)
-      elsif file =~ /.js$/i or file =~ /.json$/i
-        run_javascript_file(file)
-      else
-        run_test_unit_file(file)
+      begin
+        if file =~ /_spec.rb$/i
+          run_rspec_file(file)
+        elsif file =~ /.feature$/i
+          run_cucumber_file(file)
+        elsif file =~ /.js$/i or file =~ /.json$/i
+          run_javascript_file(file)
+        else
+          run_test_unit_file(file)
+        end
+      rescue => ex
+        @io.write Results.fatal_error(file, ex)
       end
-
-      output = "." if output == ""
-
-      @io.write Results.new(:output => output.to_s, :file => file)
 
       $0 = "[medusa] Runner waiting...."
 
-      return output
+      @io.write FileComplete.new(file: file)
+      @io.write RequestFile.new
     end
 
     # Stop running
@@ -164,7 +162,7 @@ module Medusa #:nodoc:
 
     # run all the Specs in an RSpec file (NOT IMPLEMENTED)
     def run_rspec_file(file)
-      Drivers::RspecDriver.new.execute(file)
+      Drivers::RspecDriver.new(@io).execute(file)
     end
 
     # run all the scenarios in a cucumber feature file

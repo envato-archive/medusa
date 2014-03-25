@@ -60,6 +60,12 @@ module Medusa #:nodoc:
       runner[:idle] = true
     end
 
+    def file_complete(message, runner)
+      runner[:idle] = true
+      trace "INF #{message.file.inspect}"
+      @io.write(FileComplete.new(file: message.file))
+    end
+
     # When the master sends a file down to the worker, it hits this
     # method. Then the worker delegates the file down to a runner.
     def delegate_file(message)
@@ -71,7 +77,6 @@ module Medusa #:nodoc:
     # When a runner finishes, it sends the results up to the worker. Then the
     # worker sends the results up to the master.
     def relay_results(message, runner)
-      runner[:idle] = true
       @io.write(Results.new(eval(message.serialize)))
     end
 
@@ -142,6 +147,8 @@ module Medusa #:nodoc:
     end
 
     def process_messages_from_runners
+      mutex = Mutex.new
+
       @runners.each do |r|
         @listeners << Thread.new do
           while @running
@@ -150,7 +157,9 @@ module Medusa #:nodoc:
               if message and !message.class.to_s.index("Runner").nil?
                 trace "Received Message from Runner"
                 trace "\t#{message.inspect}"
-                message.handle(self, r)
+                mutex.synchronize do
+                  message.handle(self, r)
+                end
               end
             rescue IOError => ex
               trace "Worker lost Runner [#{r.inspect}]"

@@ -28,7 +28,7 @@ module Medusa
         system "rm #{output_file}"
         result = JSON.parse(data)
 
-        extract_scenarios(result)
+        extract_scenarios(result).to_json
       end
 
       private

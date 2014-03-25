@@ -14,6 +14,18 @@ module Medusa #:nodoc:
         end
       end
 
+      class FileComplete < Medusa::Message
+        attr_accessor :file
+
+        def handle(master, worker)
+          master.file_complete(self, worker)
+        end
+
+        def serialize #:nodoc:
+          super(:file => @file)
+        end
+      end
+
       # Message telling the Runner to run a file
       class RunFile < Medusa::Message
         # The file that should be run

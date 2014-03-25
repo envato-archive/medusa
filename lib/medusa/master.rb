@@ -118,29 +118,39 @@ module Medusa #:nodoc:
 
     # Process the results coming back from the worker.
     def process_results(worker, message)
-      if message.output =~ /ActiveRecord::StatementInvalid(.*)[Dd]eadlock/ or
-         message.output =~ /PGError: ERROR(.*)[Dd]eadlock/ or
-         message.output =~ /Mysql::Error: SAVEPOINT(.*)does not exist: ROLLBACK/ or
-         message.output =~ /Mysql::Error: Deadlock found/
+      results = JSON(message.output)
+
+      results['exception'] ||= {}
+      exception_message = results['exception']['message']
+
+      if exception_message =~ /ActiveRecord::StatementInvalid(.*)[Dd]eadlock/ or
+         exception_message =~ /PGError: ERROR(.*)[Dd]eadlock/ or
+         exception_message =~ /Mysql::Error: SAVEPOINT(.*)does not exist: ROLLBACK/ or
+         exception_message =~ /Mysql::Error: Deadlock found/
+
         trace "Deadlock detected running [#{message.file}]. Will retry at the end"
         @files.push(message.file)
-        send_file(worker)
       else
-        @incomplete_files.delete_at(@incomplete_files.index(message.file))
-        trace "#{@incomplete_files.size} Files Remaining"
-        @event_listeners.each{|l| l.file_end(message.file, message.output) }
-        unless message.output == '.'
+        if results['status'] == 'failure' || results['status'] == 'fatal'
           @failed_files << message.file
         end
-        if @incomplete_files.empty?
-          @workers.each do |worker|
-            @event_listeners.each{|l| l.worker_end(worker) }
-          end
+        @event_listeners.each { |l| l.result_received(message.file, results) }
+      end
+    end
 
-          shutdown_all_workers
-        else
-          send_file(worker)
+    def file_complete(message, _worker)
+      @incomplete_files.delete_at(@incomplete_files.index(message.file))
+      trace "#{@incomplete_files.size} Files Remaining"
+
+      @event_listeners.each { |l| l.file_end(message.file) }
+
+      if @incomplete_files.empty?
+
+        @workers.each do |worker|
+          @event_listeners.each{ |l| l.worker_end(worker) }
         end
+
+        shutdown_all_workers
       end
     end
 
@@ -182,7 +192,7 @@ module Medusa #:nodoc:
       sync = Sync.new(worker, @sync, @verbose)
 
       runners = worker.fetch('runners') { raise "You must specify the number of runners"  }
-      # strace -o /tmp/strace -ff -s 1024 
+      # strace -o /tmp/strace -ff -s 1024
       command = worker.fetch('command') {
         "bundle --local --path .bundle > /dev/null; RAILS_ENV=#{@environment} bundle exec ruby -e \"require 'rubygems'; require 'medusa'; require './lib/medusa/environment'; Medusa::Worker.new(:io => Medusa::Stdio.new, :runners => #{runners}, :verbose => #{@verbose}, :runner_listeners => \'#{@string_runner_event_listeners}\', :runner_log_file => \'#{@runner_log_file}\' );\""
       }
@@ -204,6 +214,7 @@ module Medusa #:nodoc:
 
     def process_messages
       Thread.abort_on_exception = true
+      mutex = Mutex.new
 
       trace "Processing Messages"
       trace "Workers: #{@workers.inspect}"
@@ -221,7 +232,9 @@ module Medusa #:nodoc:
               # if it exists and its for me.
               # SSH gives us back echoes, so we need to ignore our own messages
               if message and !message.class.to_s.index("Worker").nil?
-                message.handle(self, worker)
+                mutex.synchronize do
+                  message.handle(self, worker)
+                end
               end
             rescue IOError
               trace "lost Worker [#{worker.inspect}]"
