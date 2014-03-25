@@ -8,6 +8,18 @@ module Medusa #:nodoc:
         end
       end
 
+      class ExampleGroupStarted < Medusa::Messages::Runner::ExampleGroupStarted
+        def handle(master, worker)
+          master.example_group_started(worker, self)
+        end
+      end
+
+      class ExampleGroupFinished < Medusa::Messages::Runner::ExampleGroupFinished
+        def handle(master, worker)
+          master.example_group_finished(worker, self)
+        end
+      end
+
       class ExampleStarted < Medusa::Messages::Runner::ExampleStarted
         def handle(master, worker)
           master.example_started(worker, self)

@@ -4,13 +4,18 @@ module RSpec
   module Core
     module Formatters
       class MedusaFormatter < BaseFormatter
-        def initialize(output)
-          super(output)
+        def example_group_started(example_group)
+          super(example_group)
+          output.puts Medusa::Messages::Runner::ExampleGroupStarted.new(group_name: example_group.description)
+        end
+
+        def example_group_finished(example_group)
+          super(example_group)
+          output.puts Medusa::Messages::Runner::ExampleGroupFinished.new(group_name: example_group.description)
         end
 
         def example_started(example)
           super(example)
-
           output.puts Medusa::Messages::Runner::ExampleStarted.new(example_name: example.description)
         end
 

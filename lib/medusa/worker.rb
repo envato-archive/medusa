@@ -60,6 +60,14 @@ module Medusa #:nodoc:
       runner[:idle] = true
     end
 
+    def example_group_started(message, runner)
+      @io.write(ExampleGroupStarted.new(eval(message.serialize)))
+    end
+
+    def example_group_finished(message, runner)
+      @io.write(ExampleGroupFinished.new(eval(message.serialize)))
+    end
+
     def example_started(message, runner)
       @io.write(ExampleStarted.new(eval(message.serialize)))
     end

@@ -142,6 +142,14 @@ module Medusa #:nodoc:
       end
     end
 
+    def example_group_started(worker, message)
+      @event_listeners.each { |l| l.example_group_started(message.group_name) }
+    end
+
+    def example_group_finished(worker, message)
+      @event_listeners.each { |l| l.example_group_started(message.group_name) }
+    end
+
     def example_group_summary(worker, message)
       summary = "Finished #{message.example_count} in #{message.duration}: #{message.failure_count} failed, #{message.pending_count} pending"
       trace summary

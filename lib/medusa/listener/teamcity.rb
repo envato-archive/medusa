@@ -6,12 +6,12 @@ module Medusa
         @teamcity_messenger = Medusa::Teamcity::Messenger.new
       end
 
-      def file_begin(file)
-        @teamcity_messenger.notify_example_group_started(file)
+      def example_group_started(group_name)
+        @teamcity_messenger.notify_example_group_started(group_name)
       end
 
-      def file_end(file)
-        @teamcity_messenger.notify_example_group_finished(file)
+      def example_group_finished(group_name)
+        @teamcity_messenger.notify_example_group_finished(group_name)
       end
 
       def file_summary(summary)

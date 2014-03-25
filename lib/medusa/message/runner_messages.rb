@@ -8,6 +8,30 @@ module Medusa #:nodoc:
         end
       end
 
+      class ExampleGroupStarted < Medusa::Message
+        attr_accessor :group_name
+
+        def handle(worker, runner)
+          worker.example_group_started(self, runner)
+        end
+
+        def serialize
+          super(group_name: @group_name)
+        end
+      end
+
+      class ExampleGroupFinished < Medusa::Message
+        attr_accessor :group_name
+
+        def handle(worker, runner)
+          worker.example_group_finished(self, runner)
+        end
+
+        def serialize
+          super(group_name: @group_name)
+        end
+      end
+
       # Message for when Runner starts a specific example
       class ExampleStarted < Medusa::Message
         attr_accessor :example_name
