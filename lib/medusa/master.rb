@@ -116,6 +116,12 @@ module Medusa #:nodoc:
       end
     end
 
+    def example_started(worker, message)
+      example_name = message.example_name
+
+      @event_listeners.each { |l| l.example_begin(example_name) }
+    end
+
     # Process the results coming back from the worker.
     def process_results(worker, message)
       result = Medusa::Drivers::Result.parse_json(message.output)
@@ -134,6 +140,13 @@ module Medusa #:nodoc:
         end
         @event_listeners.each { |l| l.result_received(message.file, result) }
       end
+    end
+
+    def example_group_summary(worker, message)
+      summary = "Finished #{message.example_count} in #{message.duration}: #{message.failure_count} failed, #{message.pending_count} pending"
+      trace summary
+
+      @event_listeners.each { |l| l.file_summary(message) }
     end
 
     def file_complete(message, _worker)

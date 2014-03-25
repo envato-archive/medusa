@@ -41,7 +41,7 @@ module RSpec
         def dump_summary(duration, example_count, failure_count, pending_count)
           super(duration, example_count, failure_count, pending_count)
           output.puts Medusa::Messages::Runner::ExampleGroupSummary.new(
-            file: example_group,
+            file: example_file_path(example_group),
             duration: duration,
             example_count: example_count,
             failure_count: failure_count,

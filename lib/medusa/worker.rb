@@ -50,7 +50,7 @@ module Medusa #:nodoc:
 
       @runners.each{|r| Process.wait r[:pid] }
     end
-    
+
     # message handling methods
 
     # When a runner wants a file, it hits this method with a message.
@@ -58,6 +58,14 @@ module Medusa #:nodoc:
     def request_file(message, runner)
       @io.write(RequestFile.new)
       runner[:idle] = true
+    end
+
+    def example_started(message, runner)
+      @io.write(ExampleStarted.new(eval(message.serialize)))
+    end
+
+    def example_group_summary(message, runner)
+      @io.write(ExampleGroupSummary.new(eval(message.serialize)))
     end
 
     def file_complete(message, runner)
@@ -120,7 +128,7 @@ module Medusa #:nodoc:
       process_messages_from_master
       process_messages_from_runners
 
-      @listeners.each{|l| l.join }
+      @listeners.each{ |l| l.join }
       @io.close
       trace "Done processing messages"
     end
