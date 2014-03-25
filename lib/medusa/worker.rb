@@ -85,6 +85,16 @@ module Medusa #:nodoc:
       @io.write(Results.new(eval(message.serialize)))
     end
 
+    def runner_startup_failure(message, runner)
+      @runners.delete(runner)
+
+      @io.write(RunnerStartupFailure.new(log: message.log))
+
+      if @runners.length == 0
+        @io.write(WorkerStartupFailure.new(log: "All runners failed to start"))
+      end
+    end
+
     # When a master issues a shutdown order, it hits this method, which causes
     # the worker to send shutdown messages to its runners.
     def shutdown
@@ -102,15 +112,15 @@ module Medusa #:nodoc:
 
     def boot_runners(num_runners) #:nodoc:
       trace "Booting #{num_runners} Runners"
-      num_runners.times do
+      num_runners.times do |runner_id|
         pipe = Medusa::Pipe.new
 
         child = SafeFork.fork do
           pipe.identify_as_child
-          Medusa::Runner.new(:io => pipe, :verbose => @verbose, :runner_listeners => @runner_event_listeners, :runner_log_file => @runner_log_file, :options => @options)
+          Medusa::Runner.new(:id => runner_id, :io => pipe, :verbose => @verbose, :runner_listeners => @runner_event_listeners, :runner_log_file => @runner_log_file, :options => @options)
         end
         pipe.identify_as_parent
-        @runners << { :pid => child, :io => pipe, :idle => false }
+        @runners << { :id => runner_id, :pid => child, :io => pipe, :idle => false }
       end
       trace "#{@runners.size} Runners booted"
     end

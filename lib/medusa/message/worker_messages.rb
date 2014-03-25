@@ -27,6 +27,18 @@ module Medusa #:nodoc:
         end
       end
 
+      class RunnerStartupFailure < Medusa::Message
+        attr_accessor :log
+
+        def serialize #:nodoc:
+          super(:log => @log)
+        end        
+
+        def handle(master, worker)
+          master.runner_startup_failure(self, worker)
+        end
+      end
+
       class FileComplete < Medusa::Message
         attr_accessor :file
 

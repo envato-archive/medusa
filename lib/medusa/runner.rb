@@ -12,29 +12,43 @@ module Medusa #:nodoc:
 
     DEFAULT_LOG_FILE = 'medusa-runner.log'
 
+    def self.setup(&block)
+      @setup ||= []
+      @setup << block
+    end
+
+    def self.setups
+      @setup || []
+    end
+
     # Boot up a runner. It takes an IO object (generally a pipe from its
     # parent) to send it messages on which files to execute.
     def initialize(opts = {})
       redirect_output( opts.fetch( :runner_log_file ) { DEFAULT_LOG_FILE } )
       reg_trap_sighup
 
+      @runner_id = opts.fetch(:id) { rand(1000) }
       @io = opts.fetch(:io) { raise "No IO Object" }
       @verbose = opts.fetch(:verbose) { false }
       @verbose = true
       @event_listeners = Array( opts.fetch( :runner_listeners ) { nil } )
       @options = opts.fetch(:options) { "" }
       @directory = get_directory
-      @start_immediately = opts.fetch(:start_immediately) { true }
 
       $stdout.sync = true
 
       $0 = "[medusa] Runner waiting...."
 
-      runner_begin
+      begin
+        runner_begin
+      rescue => ex
+        @io.write(RunnerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
+        return
+      end
 
       trace 'Booted.'
 
-      start_processing! if @start_immediately
+      @io.write RequestFile.new
 
       begin
         process_messages
@@ -42,10 +56,6 @@ module Medusa #:nodoc:
         trace ex.to_s
         raise ex
       end
-    end
-
-    def start_processing!
-      @io.write RequestFile.new
     end
 
     def reg_trap_sighup
@@ -60,6 +70,9 @@ module Medusa #:nodoc:
     def runner_begin
       trace "Firing runner_begin event"
       @event_listeners.each {|l| l.runner_begin( self ) }
+
+      trace "Running environment setup"
+      Runner.setups.each { |proc| proc.call(@runner_id) }
     end
 
     # Run a test file and report the results

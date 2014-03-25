@@ -23,6 +23,10 @@ module Medusa #:nodoc:
       def worker_startup_failure(worker, log)
       end
 
+      # Fired when a runner cannot startup due to an error.
+      def runner_startup_failure(worker, log)
+      end
+
       # Fired after runner processes have been started
       def worker_begin(worker)
       end

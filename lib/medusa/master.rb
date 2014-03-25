@@ -110,6 +110,10 @@ module Medusa #:nodoc:
       @event_listeners.each { |l| l.worker_startup_failure(worker, message.log) }
     end
 
+    def runner_startup_failure(message, runner)
+      @event_listeners.each { |l| l.runner_startup_failure(runner, message.log) }
+    end
+
     # Send a file down to a worker.
     def send_file(worker)
       f = @files.shift

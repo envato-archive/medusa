@@ -8,6 +8,18 @@ module Medusa #:nodoc:
         end
       end
 
+      class RunnerStartupFailure < Medusa::Message
+        attr_accessor :log
+
+        def serialize #:nodoc:
+          super(:log => @log)
+        end        
+
+        def handle(worker, runner)
+          worker.runner_startup_failure(self, runner)
+        end
+      end
+
       # Message for the Runner to respond with its results
       class Results < Medusa::Message
         # The output from running the test
