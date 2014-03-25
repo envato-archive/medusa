@@ -16,7 +16,7 @@ module Medusa #:nodoc:
       end
 
       def result_received(file, result)
-        if result['status'] == 'failure' || result['status'] == 'fatal'
+        if result.failure? || result.fatal?
           @report[file]['failure'] += 1
         else
           @report[file]['success'] += 1
