@@ -23,7 +23,6 @@ module Medusa #:nodoc:
 
       @io = opts.fetch(:io) { raise "No IO Object" }
       @verbose = opts.fetch(:verbose) { false }
-      @verbose = true
       @event_listeners = Array( opts.fetch( :runner_listeners ) { nil } )
       @options = opts.fetch(:options) { "" }
       @directory = get_directory
