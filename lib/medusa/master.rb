@@ -204,6 +204,13 @@ module Medusa #:nodoc:
 
       runners = worker.fetch('runners') { raise "You must specify the number of runners"  }
 
+      pre_boot = @initializers.select { |init| init.respond_to?(:pre_boot) }
+      process_boot = @initializers.select { |init| init.respond_to?(:process_boot) }
+
+
+      ssh = Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", sync.remote_dir, nil)
+      pre_boot.each do { |init| init.pre_boot(ssh) }
+
       remote_setup = @remote.fetch("init_scripts") { [] }
       remote_ruby = @remote.fetch("ruby") { "ruby" }
 

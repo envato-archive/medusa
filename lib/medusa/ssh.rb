@@ -29,7 +29,15 @@ module Medusa #:nodoc:
       @writer, @reader, @error = popen3("ssh -tt #{connection_options}")
       @writer.write("mkdir -p #{directory}\n")
       @writer.write("cd #{directory}\n")
-      @writer.write(command+"\n")
+      @writer.write("#{command}\n")
+    end
+
+    def write_raw(command)
+      @writer.write(command)
+    end
+
+    def read_raw
+      @reader.gets
     end
 
     # Close the SSH connection
