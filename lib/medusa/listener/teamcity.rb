@@ -3,24 +3,27 @@ module Medusa
     class Teamcity < Medusa::Listener::Abstract
       def initialize(output = $stdout)
         super(output)
-
         @teamcity_messenger = Medusa::Teamcity::Messenger.new
       end
 
-      # Fired when a file is started
       def file_begin(file)
-        @teamcity_messenger.notify_test_suite_started(file)
-        # notify_test_started
+        @teamcity_messenger.notify_example_group_started(file)
       end
 
-      # Fired when a file is finished
       def file_end(file)
-        @teamcity_messenger.notify_test_suite_finished(file)
+        @teamcity_messenger.notify_example_group_finished(file)
       end
 
-      # Fired every time we receive a result from a runner.
+      def file_summary(summary)
+        @teamcity_messenger.notify_example_group_summary(summary)
+      end
+
+      def example_begin(example_name)
+        @teamcity_messenger.notify_example_started(example_name)
+      end
+
       def result_received(file, result)
-        @teamcity_messenger.notify_test_finished
+        @teamcity_messenger.notify_example_finished(file, result)
       end
     end
   end
