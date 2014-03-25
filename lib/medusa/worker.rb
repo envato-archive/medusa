@@ -33,6 +33,8 @@ module Medusa #:nodoc:
 
       $0 = "[medusa] Worker"
 
+      @handler_mutex = Mutex.new      
+
       begin
         Worker.setups.each { |proc| proc.call }
 
@@ -164,7 +166,9 @@ module Medusa #:nodoc:
             if message and !message.class.to_s.index("Master").nil?
               trace "Received Message from Master"
               trace "\t#{message.inspect}"
-              message.handle(self)
+              @handler_mutex.synchronize do
+                message.handle(self)
+              end
             else
               trace "Nothing from Master, Pinging"
               @io.write Ping.new
@@ -178,8 +182,6 @@ module Medusa #:nodoc:
     end
 
     def process_messages_from_runners
-      mutex = Mutex.new
-
       @runners.each do |r|
         @listeners << Thread.new do
           while @running
@@ -188,7 +190,7 @@ module Medusa #:nodoc:
               if message and !message.class.to_s.index("Runner").nil?
                 trace "Received Message from Runner"
                 trace "\t#{message.inspect}"
-                mutex.synchronize do
+                @handler_mutex.synchronize do
                   message.handle(self, r)
                 end
               end
