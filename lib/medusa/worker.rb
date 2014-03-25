@@ -33,18 +33,23 @@ module Medusa #:nodoc:
 
       $0 = "[medusa] Worker"
 
-      Worker.setups.each { |proc| proc.call }
+      begin
+        Worker.setups.each { |proc| proc.call }
 
-      @runner_event_listeners = Array(opts.fetch(:runner_listeners) { nil })
-      @runner_event_listeners.select{|l| l.is_a? String}.each do |l|
-        @runner_event_listeners.delete_at(@runner_event_listeners.index(l))
-        listener = eval(l)
-        @runner_event_listeners << listener if listener.is_a?(Medusa::RunnerListener::Abstract)
+        @runner_event_listeners = Array(opts.fetch(:runner_listeners) { nil })
+        @runner_event_listeners.select{|l| l.is_a? String}.each do |l|
+          @runner_event_listeners.delete_at(@runner_event_listeners.index(l))
+          listener = eval(l)
+          @runner_event_listeners << listener if listener.is_a?(Medusa::RunnerListener::Abstract)
+        end
+        @runner_log_file = opts.fetch(:runner_log_file) { nil }
+
+        boot_runners(opts.fetch(:runners) { 1 })
+        @io.write(Medusa::Messages::Worker::WorkerBegin.new)
+      rescue => ex
+        @io.write(Medusa::Messages::Worker::WorkerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
+        return
       end
-      @runner_log_file = opts.fetch(:runner_log_file) { nil }
-
-      boot_runners(opts.fetch(:runners) { 1 })
-      @io.write(Medusa::Messages::Worker::WorkerBegin.new)
 
       process_messages
 
@@ -80,6 +85,16 @@ module Medusa #:nodoc:
       @io.write(Results.new(eval(message.serialize)))
     end
 
+    def runner_startup_failure(message, runner)
+      @runners.delete(runner)
+
+      @io.write(RunnerStartupFailure.new(log: message.log))
+
+      if @runners.length == 0
+        @io.write(WorkerStartupFailure.new(log: "All runners failed to start"))
+      end
+    end
+
     # When a master issues a shutdown order, it hits this method, which causes
     # the worker to send shutdown messages to its runners.
     def shutdown
@@ -97,15 +112,15 @@ module Medusa #:nodoc:
 
     def boot_runners(num_runners) #:nodoc:
       trace "Booting #{num_runners} Runners"
-      num_runners.times do
+      num_runners.times do |runner_id|
         pipe = Medusa::Pipe.new
 
         child = SafeFork.fork do
           pipe.identify_as_child
-          Medusa::Runner.new(:io => pipe, :verbose => @verbose, :runner_listeners => @runner_event_listeners, :runner_log_file => @runner_log_file, :options => @options)
+          Medusa::Runner.new(:id => runner_id, :io => pipe, :verbose => @verbose, :runner_listeners => @runner_event_listeners, :runner_log_file => @runner_log_file, :options => @options)
         end
         pipe.identify_as_parent
-        @runners << { :pid => child, :io => pipe, :idle => false }
+        @runners << { :id => runner_id, :pid => child, :io => pipe, :idle => false }
       end
       trace "#{@runners.size} Runners booted"
     end

@@ -18,7 +18,7 @@ module Medusa
 
         medusa_output.on_output do |message|
           message_bus.write Messages::Runner::Results.new(output: message, file: file)
-        end        
+        end
 
         setup_environment(file, medusa_output)
 
