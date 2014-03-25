@@ -10,58 +10,43 @@ if defined?(::Rake::TeamCity::RunnerCommon)
       class Messenger
         include ::Rake::TeamCity::RunnerCommon
 
-        def notify_example_group_started(example_group)
-          count = example_group.count
-          description = example_group.description
-
-          # send_msg(::Rake::TeamCity::MessageFactory.create_progress_message("Starting.. (#{count} examples)"))
-          # send_msg(::Rake::TeamCity::MessageFactory.create_suite_started(description, ''))
+        def notify_example_group_started(group_name)
+          send_msg(::Rake::TeamCity::MessageFactory.create_suite_started(group_name, ''))
         end
 
-        def notify_example_group_finished(example_group)
-          description = example_group.description
-          # send_msg(::Rake::TeamCity::MessageFactory.create_suite_finished(description))
-          # send_msg(totals)
+        def notify_example_group_finished(group_name)
+          send_msg(::Rake::TeamCity::MessageFactory.create_suite_finished(group_name))
         end
 
-        def notify_example_started(example)
-          name = example.name
-          # send_msg(::Rake::TeamCity::MessageFactory.create_test_started(name, ''))
+        def notify_example_group_summary(summary)
+          # send_msg(summary)
         end
 
-        def notify_example_finished(example)
-          name = example.name
-          duration = example.duration
+        def notify_example_started(example_name)
+          send_msg(::Rake::TeamCity::MessageFactory.create_test_started(example_name, ''))
+        end
 
-          # if stdout_string && !stdout_string.empty?
-          #   send_msg(::Rake::TeamCity::MessageFactory.create_test_output_message(name, true, stdout_string))
-          # end
-          #
-          # if stderr_string && !stderr_string.empty?
-          #   send_msg(::Rake::TeamCity::MessageFactory.create_test_output_message(name, false, stderr_string))
-          # end
+        def notify_example_finished(file, result)
+          send_msg(::Rake::TeamCity::MessageFactory.create_test_finished(result.description, nil, nil))
 
-          # notify_success or failure or pending
-
-          # send_msg(::Rake::TeamCity::MessageFactory.create_test_finished(name, duration, nil))
+          if result.failure? || result.fatal?
+            notify_failure(result)
+          elsif result.pending?
+            notify_pending(result)
+          end
         end
 
         private
 
         def notify_success(result)
-
         end
 
         def notify_failure(result)
-          name = result.description
-          exception = result.exception
-          backtrace = result.exception_backtrace
-          # send_msg(::Rake::TeamCity::MessageFactory.create_test_failed(name, exception, backtrace))
+          send_msg(::Rake::TeamCity::MessageFactory.create_test_failed(result.description, result.exception, result.exception_backtrace))
         end
 
         def notify_pending(result)
-          name = result.description
-          # send_msg(::Rake::TeamCity::MessageFactory.create_test_ignored(name, ''))
+          send_msg(::Rake::TeamCity::MessageFactory.create_test_ignored(result.description, ''))
         end
       end
     end
