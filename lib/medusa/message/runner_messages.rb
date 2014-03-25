@@ -8,6 +8,18 @@ module Medusa #:nodoc:
         end
       end
 
+      class RunnerStartupFailure < Medusa::Message
+        attr_accessor :log
+
+        def serialize #:nodoc:
+          super(:log => @log)
+        end        
+
+        def handle(worker, runner)
+          worker.runner_startup_failure(self, runner)
+        end
+      end
+
       class ExampleGroupStarted < Medusa::Message
         attr_accessor :group_name
 
@@ -70,10 +82,16 @@ module Medusa #:nodoc:
       # Message for the Runner to respond with its results
       class Results < Medusa::Message
         # The output from running the test
-        attr_accessor :output, :file
+        attr_accessor :output
+        # The file that was run
+        attr_accessor :file
 
-        def serialize
-          super(output: @output, file: @file)
+        def to_s
+          super + " file: #{file}"
+        end
+
+        def serialize #:nodoc:
+          super(:output => @output, :file => @file)
         end
 
         def handle(worker, runner) #:nodoc:

@@ -104,6 +104,16 @@ module Medusa #:nodoc:
       trace "Running worker_begin on event listeners DONE."
     end
 
+    def worker_startup_failure(message, worker)
+      @worker_failures ||= 0
+      @worker_failures += 1
+      @event_listeners.each { |l| l.worker_startup_failure(worker, message.log) }
+    end
+
+    def runner_startup_failure(message, runner)
+      @event_listeners.each { |l| l.runner_startup_failure(runner, message.log) }
+    end
+
     # Send a file down to a worker.
     def send_file(worker)
       f = @files.shift
