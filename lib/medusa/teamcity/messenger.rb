@@ -1,6 +1,6 @@
 begin
-  require '/Users/pablolee/src/rake-runner/rb/patch/bdd'
-  require '/Users/pablolee/src/rake-runner/rb/patch/common'
+  require 'teamcity/runner_common'
+  require 'teamcity/utils/service_message_factory'
 rescue LoadError
 end
 
