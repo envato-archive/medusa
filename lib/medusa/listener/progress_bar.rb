@@ -28,7 +28,7 @@ module Medusa #:nodoc:
       end
 
       def result_received(file, result)
-        if result.failure? || result.fatal? == 'fatal'
+        if result.failure? || result.fatal?
           @errors = true
           @error_collection << [result.description, result.exception, result.exception_backtrace]
         end
