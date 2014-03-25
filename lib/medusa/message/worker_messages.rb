@@ -14,6 +14,30 @@ module Medusa #:nodoc:
         end
       end
 
+      # class InitializerStart < Medusa::Message
+      #   attr_accessor :message
+
+      #   def serialize #:nodoc:
+      #     super(:message => @message)
+      #   end        
+
+      #   def handle(master, worker)
+      #     master.initializer_start(self, worker)
+      #   end
+      # end
+
+      # class InitializerResult < Medusa::Message
+      #   attr_accessor :message, :status
+
+      #   def serialize #:nodoc:
+      #     super(:message => @message, :status => @status)
+      #   end        
+
+      #   def handle(master, worker)
+      #     master.initializer_result(self, worker)
+      #   end
+      # end
+
       class WorkerStartupFailure < Medusa::Message
         attr_accessor :log
 

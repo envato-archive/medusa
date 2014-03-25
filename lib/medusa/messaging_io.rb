@@ -16,7 +16,7 @@ module Medusa #:nodoc:
           return Message.build(eval(message.chomp))
         rescue SyntaxError, NameError
           # uncomment to help catch remote errors by seeing all traffic
-          #$stderr.write "Not a message: [#{message.inspect}]\n"
+          $stderr.write "Not a message: [#{message.inspect}]\n"
         end
       end
     end

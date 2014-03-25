@@ -10,7 +10,7 @@ module Medusa #:nodoc:
     include Medusa::Messages::Worker
     traceable('WORKER')
 
-    attr_reader :runners
+    attr_reader :runners, :verbose, :runner_log_file
 
     def self.setup(&block)
       @setup ||= []

@@ -14,7 +14,8 @@ module Medusa #:nodoc:
     include Medusa::Messages::Master
     include Open3
     traceable('MASTER')
-    attr_reader :failed_files
+
+    attr_reader :failed_files, :verbose, :runner_log_file
 
     # Create a new Master
     #
@@ -73,7 +74,7 @@ module Medusa #:nodoc:
       @sync = opts.fetch('sync') { nil }
       @environment = opts.fetch('environment') { 'test' }
 
-      @remote = opts.fetch('remote') { Hash.new }
+      @initializers = opts.fetch('initializers') { ["Medusa::Initializers::Ruby", "Medusa::Initializers::Medusa"] }.collect { |init_class| eval(init_class) }
 
       @options = opts.fetch('options') { '' }
 
@@ -165,6 +166,14 @@ module Medusa #:nodoc:
       end
     end
 
+    def initializer_start(command, worker)
+      @event_listeners.each { |l| l.initializer_start(command, worker) }
+    end
+
+    def initializer_result(command, worker)
+      @event_listeners.each { |l| l.initializer_result(command, worker) }
+    end
+
     # A text report of the time it took to run each file
     attr_reader :report_text
 
@@ -204,34 +213,21 @@ module Medusa #:nodoc:
 
       runners = worker.fetch('runners') { raise "You must specify the number of runners"  }
 
-      pre_boot = @initializers.select { |init| init.respond_to?(:pre_boot) }
-      process_boot = @initializers.select { |init| init.respond_to?(:process_boot) }
+      puts "Initializers: #{@initializers.inspect}"
 
+      initializers = @initializers.collect { |init| puts init.inspect; init.new(self, worker) }
 
-      ssh = Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", sync.remote_dir, nil)
-      pre_boot.each do { |init| init.pre_boot(ssh) }
+      ssh = Medusa::SSH2.new("", sync.remote_dir)
+      # ssh = Medusa::SSH2.new("#{sync.ssh_opts} #{sync.connect}", sync.remote_dir, nil)
 
-      remote_setup = @remote.fetch("init_scripts") { [] }
-      remote_ruby = @remote.fetch("ruby") { "ruby" }
+      initializers.each do |init|
+        init.run(ssh)
+      end
 
-      command = Array(remote_setup).join("; ")
-      command += " RAILS_ENV=#{@environment} "
-      command += " #{remote_ruby} -e "
+      Thread.new { ssh.process! }
 
-      requires = ['rubygems', 'medusa']
-      requires += Array(@remote.fetch("requires"))
+      trace "SSH worker initialized"
 
-      ruby_line = requires.collect { |req| "require '#{req}'; " }.join
-      ruby_line += "Medusa::Worker.new(:io => Medusa::Stdio.new, :runners => #{runners}, :verbose => #{@verbose}, :runner_listeners => \'#{@string_runner_event_listeners}\', :runner_log_file => \'#{@runner_log_file}\' );"
-
-      command += ruby_line
-      # command = worker.fetch('command') {
-      #   "bundle --local --path .bundle > /dev/null; RAILS_ENV=#{@environment} bundle exec ruby -e \"require 'rubygems'; require 'medusa'; require './lib/medusa/environment'; Medusa::Worker.new(:io => Medusa::Stdio.new, :runners => #{runners}, :verbose => #{@verbose}, :runner_listeners => \'#{@string_runner_event_listeners}\', :runner_log_file => \'#{@runner_log_file}\' );\""
-      # }
-
-      trace "Booting SSH worker"
-      trace %Q(Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", #{sync.remote_dir.inspect}, #{command.inspect}))
-      ssh = Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", sync.remote_dir, command)
       return { :io => ssh, :idle => false, :type => :ssh, :connect => sync.connect }
     end
 

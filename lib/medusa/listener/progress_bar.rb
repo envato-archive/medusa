@@ -27,6 +27,14 @@ module Medusa #:nodoc:
         @runner_failures << log
       end
 
+      def initializer_start(command, worker)
+        @output.write("#{command}\n")
+      end
+
+      def initializer_result(command, worker)
+        @output.write("#{command}\n")
+      end
+
       def result_received(file, result)
         if result['status'] == 'failure' || result['status'] == 'fatal'
           @errors = true
