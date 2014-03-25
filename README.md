@@ -31,3 +31,12 @@ Goals
 
 One day...
 - Worker/Runners for Java, Go, etc.
+
+Usage (planned)
+===============
+
+1. Add `gem "medusa"` to your Gemfile, and `bundle install`
+2. Run `medusa setup`, or `medusa setup --rails`
+3. Edit the `medusa/environment.rb` file to configure environment setup (databases, etc).
+4. Edit the `medusa/config.yml` file to configure how to run specs (machines to use, etc).
+5. Run `bundle exec medusa` to run a build.
