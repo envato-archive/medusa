@@ -17,7 +17,7 @@ module Medusa
         medusa_output = EventIO.new
 
         medusa_output.on_output do |message|
-          message_bus.write Messages::Runner::Results.new(output: message, file: file)
+          message_bus.write message
         end
 
         config = [

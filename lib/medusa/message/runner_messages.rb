@@ -8,19 +8,48 @@ module Medusa #:nodoc:
         end
       end
 
+      # Message for when Runner starts a specific example
+      class ExampleStarted < Medusa::Message
+        attr_accessor :example_name
+
+        def handle(worker, runner)
+          worker.example_started(self, runner)
+        end
+
+        def serialize
+          super(example_name: @example_name)
+        end
+      end
+
+      class ExampleGroupSummary < Medusa::Message
+        attr_accessor :file
+        attr_accessor :duration
+        attr_accessor :example_count
+        attr_accessor :failure_count
+        attr_accessor :pending_count
+
+        def handle(worker, runner)
+          worker.example_group_summary(self, runner)
+        end
+
+        def serialize
+          super(
+            :file => @file,
+            :duration => @duration,
+            :example_count => @example_count,
+            :failure_count => @failure_count,
+            :pending_count => @pending_count
+          )
+        end
+      end
+
       # Message for the Runner to respond with its results
       class Results < Medusa::Message
         # The output from running the test
-        attr_accessor :output
-        # The file that was run
-        attr_accessor :file
+        attr_accessor :output, :file
 
-        def to_s
-          super + " file: #{file}"
-        end
-
-        def serialize #:nodoc:
-          super(:output => @output, :file => @file)
+        def serialize
+          super(output: @output, file: @file)
         end
 
         def handle(worker, runner) #:nodoc:
@@ -46,7 +75,7 @@ module Medusa #:nodoc:
 
         def serialize #:nodoc:
           super(:file => @file)
-        end        
+        end
       end
 
       # Message a runner sends to a worker to verify the connection

@@ -8,31 +8,49 @@ module RSpec
           super(output)
         end
 
+        def example_started(example)
+          super(example)
+          output.puts Medusa::Messages::Runner::ExampleStarted.new(example_name: example.description)
+        end
+
         def example_passed(example)
           super(example)
-          output.puts example_to_hash(example)
+          output.puts Medusa::Messages::Runner::Results.new(result: example_to_result(example))
         end
 
         def example_pending(example)
           super(example)
-          output.puts example_to_hash(example)
+          output.puts Medusa::Messages::Runner::Results.new(result: example_to_result(example))
         end
 
         def example_failed(example)
           super(example)
-          output.puts example_to_hash(example)
+          output.puts Medusa::Messages::Runner::Results.new(result: example_to_result(example))
+        end
+
+        def dump_summary(duration, example_count, failure_count, pending_count)
+          super(duration, example_count, failure_count, pending_count)
+          output.puts Medusa::Messages::Runner::ExampleGroupSummary.new(
+            file: example_group,
+            duration: duration,
+            example_count: example_count,
+            failure_count: failure_count,
+            pending_count: pending_count
+          )
         end
 
         private
 
-        def example_to_hash(example)
-          {
+        def example_to_result(example)
+          attributes = {
             :description => example.description,
-            :status => example.execution_result[:status],
+            :status => example.execution_result[:status].to_sym,
             :run_time => example.execution_result[:run_time],
             :exception => example.exception.try(:message),
             :exception_backtrace => example.exception.try(:backtrace),
           }
+
+          Medusa::Drivers::Result.new(attributes)
         end
       end
     end
