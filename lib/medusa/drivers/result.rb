@@ -3,17 +3,12 @@ module Medusa
     class Result
       attr_accessor :description, :status, :run_time, :exception, :exception_backtrace
 
-      def self.parse_json(json_string)
-        attributes = JSON(json_string)
-        Result.new(attributes)
-      end
-
       def initialize(attributes)
-        @description = attributes['description']
-        @status = attributes['status'].to_sym
-        @run_time = attributes['run_time']
-        @exception = attributes['exception']
-        @exception_backtrace = attributes['exception_backtrace']
+        @description = attributes[:description]
+        @status = attributes[:status].to_sym
+        @run_time = attributes[:run_time]
+        @exception = attributes[:exception]
+        @exception_backtrace = attributes[:exception_backtrace]
       end
 
       def success?

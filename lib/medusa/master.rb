@@ -118,7 +118,7 @@ module Medusa #:nodoc:
 
     # Process the results coming back from the worker.
     def process_results(worker, message)
-      result = Medusa::Drivers::Result.parse_json(message.output)
+      result = message.output
 
       exception_message = result.exception
       if exception_message =~ /ActiveRecord::StatementInvalid(.*)[Dd]eadlock/ or
