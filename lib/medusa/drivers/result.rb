@@ -1,7 +1,7 @@
 module Medusa
   module Drivers
     class Result
-      attr_accessor :description, :status, :run_time, :exception, :exception_backtrace
+      attr_accessor :description, :status, :run_time, :exception, :exception_backtrace, :duration
 
       def self.parse_json(json_string)
         attributes = JSON(json_string)
@@ -14,6 +14,7 @@ module Medusa
         @run_time = attributes['run_time']
         @exception = attributes['exception']
         @exception_backtrace = attributes['exception_backtrace']
+        @duration = attributes['duration']
       end
 
       def [](value)
@@ -25,7 +26,7 @@ module Medusa
       end
 
       def failure?
-        status == :failure
+        status == :failed
       end
 
       def pending?

@@ -27,7 +27,7 @@ if defined?(::Rake::TeamCity::RunnerCommon)
         end
 
         def notify_example_finished(file, result)
-          send_msg(::Rake::TeamCity::MessageFactory.create_test_finished(result.description, nil, nil))
+          send_msg(::Rake::TeamCity::MessageFactory.create_test_finished(result.description, result.duration, nil))
 
           if result.failure? || result.fatal?
             notify_failure(result)
