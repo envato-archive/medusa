@@ -23,7 +23,7 @@ module RSpec
           super(example)
 
           results = example_to_json(example)
-          file_path = example_file_path(example)
+          file_path = example_group_file_path(example.example_group)
           output.puts Medusa::Messages::Runner::Results.new(output: results, file: file_path)
         end
 
@@ -31,7 +31,7 @@ module RSpec
           super(example)
 
           results = example_to_json(example)
-          file_path = example_file_path(example)
+          file_path = example_group_file_path(example.example_group)
           output.puts Medusa::Messages::Runner::Results.new(output: results, file: file_path)
         end
 
@@ -39,14 +39,14 @@ module RSpec
           super(example)
 
           results = example_to_json(example)
-          file_path = example_file_path(example)
+          file_path = example_group_file_path(example.example_group)
           output.puts Medusa::Messages::Runner::Results.new(output: results, file: file_path)
         end
 
         def dump_summary(duration, example_count, failure_count, pending_count)
           super(duration, example_count, failure_count, pending_count)
           output.puts Medusa::Messages::Runner::ExampleGroupSummary.new(
-            file: example_file_path(example_group),
+            file: example_group_file_path(example_group),
             duration: duration,
             example_count: example_count,
             failure_count: failure_count,
@@ -56,8 +56,8 @@ module RSpec
 
         private
 
-        def example_file_path(example)
-          example.file_path.gsub(/\.\//, '') rescue "<file not available>"
+        def example_group_file_path(example_group)
+          example_group.file_path.gsub(/\.\//, '') rescue "<file not available>"
         end
 
         def example_to_json(example)
