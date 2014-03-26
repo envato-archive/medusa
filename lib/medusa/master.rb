@@ -34,6 +34,8 @@ module Medusa #:nodoc:
     # * :autosort
     #   * Set to false to disable automatic sorting by historical run-time per file
     def initialize(opts = { })
+      redirect_output("medusa-master.log")
+
       opts.stringify_keys!
       config_file = opts.delete('config') { nil }
       if config_file

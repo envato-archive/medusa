@@ -25,6 +25,8 @@ module Medusa #:nodoc:
     # * io: The IO object to use to communicate with the master
     # * num_runners: The number of runners to launch
     def initialize(opts = {})
+      redirect_output("medusa-worker.log")
+
       @verbose = opts.fetch(:verbose) { false }
       @io = opts.fetch(:io) { raise "No IO Object" }
       @runners = []
