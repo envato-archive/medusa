@@ -36,7 +36,7 @@ module Medusa #:nodoc:
 
       $stdout.sync = true
 
-      $0 = "[medusa] Runner waiting...."
+      $0 = "[medusa] Runner setting up...."
 
       begin
         runner_begin
