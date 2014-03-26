@@ -63,6 +63,7 @@ module RSpec
         def example_to_json(example)
           {
             :description => example.description,
+            :duration => example.execution_result[:run_time],
             :status => example.execution_result[:status].to_sym,
             :run_time => example.execution_result[:run_time],
             :exception => example.exception.try(:message),
