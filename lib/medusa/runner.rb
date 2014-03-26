@@ -90,7 +90,7 @@ module Medusa #:nodoc:
         else
           run_test_unit_file(file)
         end
-      rescue => ex
+      rescue StandardError, LoadError => ex
         @io.write Results.fatal_error(file, ex)
       end
 
