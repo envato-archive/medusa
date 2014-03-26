@@ -13,6 +13,7 @@ module Medusa #:nodoc:
         @error_collection = []
         @worker_failures = []
         @runner_failures = []
+        @start_at = Time.now
 
         @files = files.dup
 
@@ -48,10 +49,16 @@ module Medusa #:nodoc:
       # Break the line
       def testing_end
         render_progress_bar
+        render_time
         render_errors
       end
 
       private
+
+      def render_time
+        duration = Time.now - @start_at
+        @output.write "\n\nCompleted in #{duration}s\n\n"
+      end
 
       def render_errors
         @error_collection.each do |(name, exception, backtrace)|
@@ -88,7 +95,7 @@ module Medusa #:nodoc:
         @output.write '>'
         (width-complete).times{@output.write ' '}
         @output.write "\033[0m"
-        @output.write "] #{@files_completed}/#{@total_files} - #{@tests_executed} tests completed, #{@fatals} fatals."
+        @output.write "] #{@files_completed}/#{@total_files} - #{@tests_executed} completed, #{@error_collection.length} failures, #{@fatals} fatals."
         @output.flush
       end
     end
