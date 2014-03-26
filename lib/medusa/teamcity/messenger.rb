@@ -1,4 +1,7 @@
 begin
+  $LOAD_PATH << '/Users/pablolee/src/rake-runner/rb/patch/bdd'
+  $LOAD_PATH << '/Users/pablolee/src/rake-runner/rb/patch/common'
+
   require 'teamcity/runner_common'
   require 'teamcity/utils/service_message_factory'
 rescue LoadError
@@ -42,7 +45,7 @@ if defined?(::Rake::TeamCity::RunnerCommon)
         end
 
         def notify_failure(result)
-          send_msg(::Rake::TeamCity::MessageFactory.create_test_failed(result.description, result.exception, result.exception_backtrace))
+          send_msg(::Rake::TeamCity::MessageFactory.create_test_failed(result.description, result.exception, result.exception_backtrace.join('\n')))
         end
 
         def notify_pending(result)
