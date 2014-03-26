@@ -283,8 +283,8 @@ module Medusa #:nodoc:
       if File.exists? heuristic_file
         report = YAML.load_file(heuristic_file)
         return unless report
-        sorted_files = report.sort do|a,b|
-          b[1]['duration'] <=> a[1]['duration']
+        sorted_files = report.sort do |a,b|
+          (b[1]['duration'] <=> a[1]['duration']) || 0
         end.collect{ |tuple| tuple[0] }
 
         sorted_files.each do |f|
