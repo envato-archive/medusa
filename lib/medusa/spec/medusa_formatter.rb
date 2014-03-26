@@ -57,7 +57,7 @@ module RSpec
         private
 
         def example_file_path(example)
-          example.file_path.gsub(/\.\//, '')
+          example.file_path.gsub(/\.\//, '') rescue "<file not available>"
         end
 
         def example_to_json(example)
