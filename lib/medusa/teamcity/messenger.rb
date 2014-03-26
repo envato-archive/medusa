@@ -40,7 +40,7 @@ if defined?(::Rake::TeamCity::RunnerCommon)
         private
 
         def notify_failure(result)
-          send_msg(::Rake::TeamCity::MessageFactory.create_test_failed(result.description, result.exception, result.exception_backtrace.join('\n')))
+          send_msg(::Rake::TeamCity::MessageFactory.create_test_failed(result.description, result.exception, result.exception_backtrace.join("\n")))
         end
 
         def notify_pending(result)
