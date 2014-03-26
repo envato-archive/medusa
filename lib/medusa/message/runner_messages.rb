@@ -99,12 +99,14 @@ module Medusa #:nodoc:
         end
 
         def self.fatal_error(file, exception)
-          new(file: file, output: { description: "Fatal Error", status: "fatal", file_path: file, exception: {
-              :class => exception.class.name,
-              :message => exception.message,
-              :backtrace => exception.backtrace,
-            }
-          }.to_json)
+          new(
+            file: file,
+            output: {
+              description: "Fatal Error", status: "fatal",
+              exception: exception.message,
+              exception_backtrace: exception.backtrace,
+            }.to_json
+          )
         end
       end
 
