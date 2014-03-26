@@ -57,7 +57,7 @@ module Medusa #:nodoc:
 
       process_messages
 
-      @runners.each{|r| Process.wait r[:pid] }
+      @runners.each {|r| Process.wait r[:pid] }
     end
 
     # message handling methods
