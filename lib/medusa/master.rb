@@ -159,7 +159,7 @@ module Medusa #:nodoc:
     end
 
     def example_group_finished(worker, message)
-      @event_listeners.each { |l| l.example_group_started(message.group_name) }
+      @event_listeners.each { |l| l.example_group_finished(message.group_name) }
     end
 
     def example_group_summary(worker, message)

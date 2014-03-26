@@ -27,14 +27,14 @@ if defined?(::Rake::TeamCity::RunnerCommon)
         end
 
         def notify_example_finished(file, result)
-          duration = result.duration || 0 # sometimes rspec doesn't set a duration in its results
-          send_msg(::Rake::TeamCity::MessageFactory.create_test_finished(result.description, duration, nil))
-
           if result.failure? || result.fatal?
             notify_failure(result)
           elsif result.pending?
             notify_pending(result)
           end
+
+          duration = result.duration || 0 # sometimes rspec doesn't set a duration in its results
+          send_msg(::Rake::TeamCity::MessageFactory.create_test_finished(result.description, duration, nil))
         end
 
         private
