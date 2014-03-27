@@ -34,6 +34,8 @@ module Medusa #:nodoc:
     # * :autosort
     #   * Set to false to disable automatic sorting by historical run-time per file
     def initialize(opts = { })
+      redirect_output("medusa-master.log")
+
       opts.stringify_keys!
       config_file = opts.delete('config') { nil }
       if config_file
@@ -61,7 +63,7 @@ module Medusa #:nodoc:
       @event_listeners = Array(opts.fetch('listeners') { nil } )
       @event_listeners.select { |l| l.is_a? String }.each do |l|
         @event_listeners.delete_at(@event_listeners.index(l))
-        listener = l.constantize.new
+        listener = l.safe_constantize.try(:new)
         @event_listeners << listener if listener.is_a?(Medusa::Listener::Abstract)
       end
 
@@ -129,6 +131,12 @@ module Medusa #:nodoc:
       end
     end
 
+    def example_started(worker, message)
+      example_name = message.example_name
+
+      @event_listeners.each { |l| l.example_begin(example_name) }
+    end
+
     # Process the results coming back from the worker.
     def process_results(worker, message)
       result = Medusa::Drivers::Result.parse_json(message.output)
@@ -147,6 +155,21 @@ module Medusa #:nodoc:
         end
         @event_listeners.each { |l| l.result_received(message.file, result) }
       end
+    end
+
+    def example_group_started(worker, message)
+      @event_listeners.each { |l| l.example_group_started(message.group_name) }
+    end
+
+    def example_group_finished(worker, message)
+      @event_listeners.each { |l| l.example_group_finished(message.group_name) }
+    end
+
+    def example_group_summary(worker, message)
+      summary = "Finished #{message.example_count} in #{message.duration}: #{message.failure_count} failed, #{message.pending_count} pending"
+      trace summary
+
+      @event_listeners.each { |l| l.file_summary(message) }
     end
 
     def file_complete(message, _worker)
@@ -284,8 +307,8 @@ module Medusa #:nodoc:
       if File.exists? heuristic_file
         report = YAML.load_file(heuristic_file)
         return unless report
-        sorted_files = report.sort do|a,b|
-          b[1]['duration'] <=> a[1]['duration']
+        sorted_files = report.sort do |a,b|
+          (b[1]['duration'] <=> a[1]['duration']) || 0
         end.collect{ |tuple| tuple[0] }
 
         sorted_files.each do |f|

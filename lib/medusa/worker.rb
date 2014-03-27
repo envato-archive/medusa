@@ -25,6 +25,8 @@ module Medusa #:nodoc:
     # * io: The IO object to use to communicate with the master
     # * num_runners: The number of runners to launch
     def initialize(opts = {})
+      redirect_output("medusa-worker.log")
+
       @verbose = opts.fetch(:verbose) { false }
       @io = opts.fetch(:io) { raise "No IO Object" }
       @runners = []
@@ -32,6 +34,8 @@ module Medusa #:nodoc:
       @options = opts.fetch(:options) { "" }
 
       $0 = "[medusa] Worker"
+
+      @handler_mutex = Mutex.new      
 
       begin
         Worker.setups.each { |proc| proc.call }
@@ -53,9 +57,9 @@ module Medusa #:nodoc:
 
       process_messages
 
-      @runners.each{|r| Process.wait r[:pid] }
+      @runners.each {|r| Process.wait r[:pid] }
     end
-    
+
     # message handling methods
 
     # When a runner wants a file, it hits this method with a message.
@@ -63,6 +67,22 @@ module Medusa #:nodoc:
     def request_file(message, runner)
       @io.write(RequestFile.new)
       runner[:idle] = true
+    end
+
+    def example_group_started(message, runner)
+      @io.write(ExampleGroupStarted.new(eval(message.serialize)))
+    end
+
+    def example_group_finished(message, runner)
+      @io.write(ExampleGroupFinished.new(eval(message.serialize)))
+    end
+
+    def example_started(message, runner)
+      @io.write(ExampleStarted.new(eval(message.serialize)))
+    end
+
+    def example_group_summary(message, runner)
+      @io.write(ExampleGroupSummary.new(eval(message.serialize)))
     end
 
     def file_complete(message, runner)
@@ -135,7 +155,7 @@ module Medusa #:nodoc:
       process_messages_from_master
       process_messages_from_runners
 
-      @listeners.each{|l| l.join }
+      @listeners.each{ |l| l.join }
       @io.close
       trace "Done processing messages"
     end
@@ -148,7 +168,9 @@ module Medusa #:nodoc:
             if message and !message.class.to_s.index("Master").nil?
               trace "Received Message from Master"
               trace "\t#{message.inspect}"
-              message.handle(self)
+              @handler_mutex.synchronize do
+                message.handle(self)
+              end
             else
               trace "Nothing from Master, Pinging"
               @io.write Ping.new
@@ -162,8 +184,6 @@ module Medusa #:nodoc:
     end
 
     def process_messages_from_runners
-      mutex = Mutex.new
-
       @runners.each do |r|
         @listeners << Thread.new do
           while @running
@@ -172,7 +192,7 @@ module Medusa #:nodoc:
               if message and !message.class.to_s.index("Runner").nil?
                 trace "Received Message from Runner"
                 trace "\t#{message.inspect}"
-                mutex.synchronize do
+                @handler_mutex.synchronize do
                   message.handle(self, r)
                 end
               end

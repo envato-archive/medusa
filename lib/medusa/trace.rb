@@ -18,6 +18,17 @@ module Medusa #:nodoc:
       def trace(str)
         $stdout.write "#{Time.now.to_f} #{self.class._traceable_prefix}| #{str}\n" if @verbose
       end
+
+      def redirect_output file_name
+        begin
+          $stderr = $stdout =  File.open(file_name, 'a')
+        rescue
+          # it should always redirect output in order to handle unexpected interruption
+          # successfully
+          $stderr = $stdout =  File.open("some-log.log", 'a')
+        end
+      end
+
     end
   end
 end

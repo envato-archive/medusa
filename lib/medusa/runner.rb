@@ -30,14 +30,13 @@ module Medusa #:nodoc:
       @runner_id = opts.fetch(:id) { rand(1000) }
       @io = opts.fetch(:io) { raise "No IO Object" }
       @verbose = opts.fetch(:verbose) { false }
-      @verbose = true
       @event_listeners = Array( opts.fetch( :runner_listeners ) { nil } )
       @options = opts.fetch(:options) { "" }
       @directory = get_directory
 
       $stdout.sync = true
 
-      $0 = "[medusa] Runner waiting...."
+      $0 = "[medusa] Runner setting up...."
 
       begin
         runner_begin
@@ -91,7 +90,7 @@ module Medusa #:nodoc:
         else
           run_test_unit_file(file)
         end
-      rescue => ex
+      rescue StandardError, LoadError => ex
         @io.write Results.fatal_error(file, ex)
       end
 
@@ -258,16 +257,6 @@ module Medusa #:nodoc:
           nil
         end
       end.compact
-    end
-
-    def redirect_output file_name
-      begin
-        $stderr = $stdout =  File.open(file_name, 'a')
-      rescue
-        # it should always redirect output in order to handle unexpected interruption
-        # successfully
-        $stderr = $stdout =  File.open(DEFAULT_LOG_FILE, 'a')
-      end
     end
 
     def get_directory

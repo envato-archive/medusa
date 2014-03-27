@@ -43,6 +43,18 @@ module Medusa #:nodoc:
       def file_end(file)
       end
 
+      def file_summary(summary)
+      end
+
+      def example_group_started(group_name)
+      end
+
+      def example_group_finished(group_name)
+      end
+
+      def example_begin(example_name)
+      end
+
       # Fired every time we receive a result from a runner.
       def result_received(file, result)
       end

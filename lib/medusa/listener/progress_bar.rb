@@ -13,6 +13,7 @@ module Medusa #:nodoc:
         @error_collection = []
         @worker_failures = []
         @runner_failures = []
+        @start_at = Time.now
 
         @files = files.dup
 
@@ -28,13 +29,13 @@ module Medusa #:nodoc:
       end
 
       def result_received(file, result)
-        if result['status'] == 'failure' || result['status'] == 'fatal'
+        if result.failure? || result.fatal?
           @errors = true
-          @error_collection << [result['description'], result['file_path'], result['line_number'], result['exception']]
+          @error_collection << [result.description, result.exception, result.exception_backtrace]
         end
 
         @tests_executed += 1
-        @fatals += 1 if result['status'] == 'fatal'
+        @fatals += 1 if result.fatal?
         render_progress_bar
       end
 
@@ -48,17 +49,22 @@ module Medusa #:nodoc:
       # Break the line
       def testing_end
         render_progress_bar
+        render_time
         render_errors
       end
 
       private
 
+      def render_time
+        duration = Time.now - @start_at
+        @output.write "\n\nCompleted in #{duration}s\n\n"
+      end
+
       def render_errors
-        @error_collection.each do |(name, file, line, error)|
+        @error_collection.each do |(name, exception, backtrace)|
           @output.write "#{name}\n"
-          @output.write "#{file}:#{line}\n"
-          @output.write "#{error['class']} - #{error['message']}\n"
-          @output.write error['backtrace'].join("\n")
+          @output.write "#{exception}\n"
+          @output.write "#{backtrace}\n"
           @output.write "\n\n"
         end
 
@@ -89,7 +95,7 @@ module Medusa #:nodoc:
         @output.write '>'
         (width-complete).times{@output.write ' '}
         @output.write "\033[0m"
-        @output.write "] #{@files_completed}/#{@total_files} - #{@tests_executed} tests completed, #{@fatals} fatals."
+        @output.write "] #{@files_completed}/#{@total_files} - #{@tests_executed} completed, #{@error_collection.length} failures, #{@fatals} fatals."
         @output.flush
       end
     end
