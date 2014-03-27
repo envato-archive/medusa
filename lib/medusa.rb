@@ -1,3 +1,4 @@
+require 'json'
 require 'medusa/version'
 require 'medusa/trace'
 require 'medusa/pipe'

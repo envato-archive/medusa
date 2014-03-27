@@ -61,14 +61,21 @@ module RSpec
         end
 
         def example_to_json(example)
-          {
+          data = {
             :description => example.description,
             :duration => example.execution_result[:run_time],
             :status => example.execution_result[:status].to_sym,
-            :run_time => example.execution_result[:run_time],
-            :exception => example.exception.try(:message),
-            :exception_backtrace => example.exception.try(:backtrace),
-          }.to_json
+            :run_time => example.execution_result[:run_time]
+          }
+
+          if example.exception
+            data.merge!(
+              :exception => example.exception.message,
+              :exception_backtrace => example.exception.backtrace
+            )
+          end
+
+          data.to_json
         end
       end
     end
