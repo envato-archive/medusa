@@ -83,4 +83,21 @@ class RSpecDriverTest < Test::Unit::TestCase
 
   end
 
+  context "with a failing spec" do
+    def failure_test_file
+      Pathname.new(File.dirname(__FILE__)).join("../fixtures/rspec/simple/simple_failure_spec.rb")
+    end
+
+    should "capture the failure" do
+      stream = BasicMessageStream.new
+
+      driver = Medusa::Drivers::RspecDriver.new(stream)
+      driver.execute(failure_test_file)
+
+      assert stream.result_messages.length == 1, "Should only be 1 message, but there was #{stream.result_messages.length}"
+      assert_equal JSON.parse(stream.result_messages.first.output)['status'], 'failed'
+    end
+
+  end
+
 end
