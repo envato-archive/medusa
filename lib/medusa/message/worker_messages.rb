@@ -1,4 +1,4 @@
-module Medusa #:nodoc: 
+module Medusa #:nodoc:
   module Messages #:nodoc:
     module Worker #:nodoc:
       # Message indicating that a worker needs a file to delegate to a runner
@@ -43,7 +43,7 @@ module Medusa #:nodoc:
 
         def serialize #:nodoc:
           super(:log => @log)
-        end        
+        end
 
         def handle(master, worker)
           master.worker_startup_failure(self, worker)
@@ -56,7 +56,7 @@ module Medusa #:nodoc:
 
         def serialize #:nodoc:
           super(:log => @log)
-        end        
+        end
 
         def handle(master, worker)
           master.runner_startup_failure(self, worker)

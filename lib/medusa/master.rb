@@ -129,9 +129,7 @@ module Medusa #:nodoc:
     end
 
     def example_started(worker, message)
-      example_name = message.example_name
-
-      @event_listeners.each { |l| l.example_begin(example_name) }
+      @event_listeners.each { |l| l.example_begin(message.file, message.example_name) }
     end
 
     # Process the results coming back from the worker.
@@ -155,11 +153,11 @@ module Medusa #:nodoc:
     end
 
     def example_group_started(worker, message)
-      @event_listeners.each { |l| l.example_group_started(message.group_name) }
+      @event_listeners.each { |l| l.example_group_started(message.file, message.group_name) }
     end
 
     def example_group_finished(worker, message)
-      @event_listeners.each { |l| l.example_group_finished(message.group_name) }
+      @event_listeners.each { |l| l.example_group_finished(message.file, message.group_name) }
     end
 
     def example_group_summary(worker, message)

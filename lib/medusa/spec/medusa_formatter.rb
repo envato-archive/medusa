@@ -6,17 +6,23 @@ module RSpec
       class MedusaFormatter < BaseFormatter
         def example_group_started(example_group)
           super(example_group)
-          output.puts Medusa::Messages::Runner::ExampleGroupStarted.new(group_name: example_group.description)
+
+          file_path = example_group_file_path(example_group)
+          output.puts Medusa::Messages::Runner::ExampleGroupStarted.new(group_name: example_group.description, file: file_path)
         end
 
         def example_group_finished(example_group)
           super(example_group)
-          output.puts Medusa::Messages::Runner::ExampleGroupFinished.new(group_name: example_group.description)
+
+          file_path = example_group_file_path(example_group)
+          output.puts Medusa::Messages::Runner::ExampleGroupFinished.new(group_name: example_group.description, file: file_path)
         end
 
         def example_started(example)
           super(example)
-          output.puts Medusa::Messages::Runner::ExampleStarted.new(example_name: example.description)
+
+          file_path = example_group_file_path(example.example_group)
+          output.puts Medusa::Messages::Runner::ExampleStarted.new(example_name: example.description, file: file_path)
         end
 
         def example_passed(example)

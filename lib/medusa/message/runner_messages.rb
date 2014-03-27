@@ -13,7 +13,7 @@ module Medusa #:nodoc:
 
         def serialize #:nodoc:
           super(:log => @log)
-        end        
+        end
 
         def handle(worker, runner)
           worker.runner_startup_failure(self, runner)
@@ -21,39 +21,39 @@ module Medusa #:nodoc:
       end
 
       class ExampleGroupStarted < Medusa::Message
-        attr_accessor :group_name
+        attr_accessor :group_name, :file
 
         def handle(worker, runner)
           worker.example_group_started(self, runner)
         end
 
         def serialize
-          super(group_name: @group_name)
+          super(group_name: @group_name, file: @file)
         end
       end
 
       class ExampleGroupFinished < Medusa::Message
-        attr_accessor :group_name
+        attr_accessor :group_name, :file
 
         def handle(worker, runner)
           worker.example_group_finished(self, runner)
         end
 
         def serialize
-          super(group_name: @group_name)
+          super(group_name: @group_name, file: @file)
         end
       end
 
       # Message for when Runner starts a specific example
       class ExampleStarted < Medusa::Message
-        attr_accessor :example_name
+        attr_accessor :example_name, :file
 
         def handle(worker, runner)
           worker.example_started(self, runner)
         end
 
         def serialize
-          super(example_name: @example_name)
+          super(example_name: @example_name, file: @file)
         end
       end
 

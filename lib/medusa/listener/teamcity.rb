@@ -7,20 +7,20 @@ if defined?(Medusa::Teamcity::Messenger)
           @teamcity_messenger = Medusa::Teamcity::Messenger.new
         end
 
-        def example_group_started(group_name)
-          @teamcity_messenger.notify_example_group_started(group_name)
+        def example_group_started(file, group_name)
+          @teamcity_messenger.notify_example_group_started(file, group_name)
         end
 
-        def example_group_finished(group_name)
-          @teamcity_messenger.notify_example_group_finished(group_name)
+        def example_group_finished(file, group_name)
+          @teamcity_messenger.notify_example_group_finished(file, group_name)
         end
 
         def file_summary(summary)
           @teamcity_messenger.notify_example_group_summary(summary)
         end
 
-        def example_begin(example_name)
-          @teamcity_messenger.notify_example_started(example_name)
+        def example_begin(file, example_name)
+          @teamcity_messenger.notify_example_started(file, example_name)
         end
 
         def result_received(file, result)

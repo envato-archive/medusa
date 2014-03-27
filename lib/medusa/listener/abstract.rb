@@ -46,13 +46,13 @@ module Medusa #:nodoc:
       def file_summary(summary)
       end
 
-      def example_group_started(group_name)
+      def example_group_started(file, group_name)
       end
 
-      def example_group_finished(group_name)
+      def example_group_finished(file, group_name)
       end
 
-      def example_begin(example_name)
+      def example_begin(file, example_name)
       end
 
       # Fired every time we receive a result from a runner.
