@@ -22,7 +22,7 @@ module Medusa
 
     def run!
       loop do
-        sleep(0.1) while @received_messages.empty?
+        # sleep(0.1) while @received_messages.empty?
         event = @received_messages.pop
 
         if event.first == :message
@@ -38,17 +38,17 @@ module Medusa
 
     private
 
-    def init_stream_thread(stream)
-      Thread.start do
+    def init_stream_thread(s)
+      Thread.start(s) do |stream|
         begin
           loop do
-            @streams.each do |stream|
-              message = stream.wait_for_message
-              @received_messages << [:message, message, stream] if message
-            end
+            message = stream.wait_for_message
+            @received_messages << [:message, message, stream] if message
           end
         rescue IOError
           @received_messages << [:disconnect, stream]
+        rescue => ex
+          puts "ERROR: #{ex.to_s}"
         end
       end
     end

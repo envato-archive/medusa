@@ -2,7 +2,7 @@ module Medusa
   class LocalConnection
 
     def initialize
-      @port = TcpTransport.next_available_port
+      @port = TcpTransport.next_available_port + 100
     end
 
     def exec(command, &output_handler)

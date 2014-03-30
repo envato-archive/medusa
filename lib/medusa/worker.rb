@@ -40,8 +40,12 @@ module Medusa #:nodoc:
       @messages = MessageStreamMultiplexer.new
 
       @messages.on_message do |message, stream|
+        puts "Worker got msg: #{message.inspect}"
         handle_message(message, stream)
       end
+
+      # Let master know we've started up.
+      @io.send_message(Medusa::Messages::Worker::Ping.new)
 
       @messages << @io
 

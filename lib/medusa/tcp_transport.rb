@@ -21,13 +21,15 @@ module Medusa
     # Blocks until a response.
     def read
       init_socket
-      @socket.recv(10).to_s#[0..-2]  # Trim off the \n
+      data = @socket.gets
+      raise IOError if data.nil?
+      data.to_s.chomp
     end
 
     # Writes data to the connection.
     def write(data)
       init_socket
-      @socket.write("#{@data}")
+      @socket.puts("#{data}")
     end
 
     def close

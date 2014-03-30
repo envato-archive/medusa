@@ -237,6 +237,8 @@ module Medusa #:nodoc:
 
       pid = connection.exec_and_detach("bin/medusa worker --connect-tcp localhost:#{connection.port} --runners #{runners}")
 
+      wait_until_alive(connection.message_stream)
+
       @messages << connection.message_stream
 
       @workers << { :pid => pid, :io => connection.message_stream, :idle => false, :type => :local }
@@ -316,6 +318,17 @@ module Medusa #:nodoc:
       trace "Processing messages..."
       @messages.run!
       @event_listeners.each{ |l| l.testing_end }
+    end
+
+    def wait_until_alive(message_stream)
+      begin
+        Timeout.timeout(4000) do
+          message_stream.wait_for_message
+        end
+
+      rescue TimeoutError
+        raise "Worker didn't start in time"
+      end      
     end
 
     def sort_files_from_report

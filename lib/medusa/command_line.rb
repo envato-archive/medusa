@@ -42,7 +42,7 @@ module Medusa
           Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => [
               {
                 'type' => 'local', 
-                'runners' => 1
+                'runners' => 4
               }
               # {
               #   'connect' => "sean@localhost",
@@ -68,7 +68,6 @@ module Medusa
             Medusa::SocketTransport.new(command_options[:socket])
           elsif command_options[:tcp]
             server, ip = command_options[:tcp].split(":", 2)
-            puts "Connecting #{server}:#{ip}"
             Medusa::TcpTransport.new(server, ip.to_i)
           end
 
