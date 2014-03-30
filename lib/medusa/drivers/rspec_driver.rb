@@ -3,7 +3,7 @@ module Medusa
     class RspecDriver < Abstract
       REDIRECTION_FILE = "/tmp/rspec-output.log"
 
-      def detect(file)
+      def self.accept?(file)
         file =~ /_spec\.rb$/
       end
 

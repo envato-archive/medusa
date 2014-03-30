@@ -63,9 +63,11 @@ module Medusa #:nodoc:
       @event_listeners = Array(opts.fetch('listeners') { nil } )
       @event_listeners.select { |l| l.is_a? String }.each do |l|
         @event_listeners.delete_at(@event_listeners.index(l))
-        listener = l.safe_constantize.try(:new)
+        listener = l.new
         @event_listeners << listener if listener.is_a?(Medusa::Listener::Abstract)
       end
+
+      puts @event_listeners.inspect
 
       @string_runner_event_listeners = Array( opts.fetch( 'runner_listeners' ) { nil } )
 
@@ -94,19 +96,24 @@ module Medusa #:nodoc:
 
       @event_listeners.each{ |l| l.testing_begin(@files) }
 
+      @messages = MessageStreamMultiplexer.new
+
+      @messages.on_message do |message, stream|
+        handle_message(message, stream)
+      end
+
+      @messages.on_stream_lost do |stream|
+        # TODO - Remove worker from the pool.
+      end
+
       boot_workers worker_cfg
 
-      # Load the test environment, create rspec/cucumber/etc jobs.
-      # RSpec.world
-
-      process_messages
+      run!
     end
 
     # Message handling
     def worker_begin(worker)
-      trace "Running worker_begin on #{@event_listeners.inspect} event listeners."
       @event_listeners.each { |l| l.worker_begin(worker) }
-      trace "Running worker_begin on event listeners DONE."
     end
 
     def worker_startup_failure(message, worker)
@@ -195,6 +202,7 @@ module Medusa #:nodoc:
 
     def boot_workers(workers)
       trace "Booting #{workers.size} workers"
+
       workers.each do |worker|
         worker.stringify_keys!
         trace "worker opts #{worker.inspect}"
@@ -202,7 +210,7 @@ module Medusa #:nodoc:
         if type.to_s == 'local'
           boot_local_worker(worker)
         elsif type.to_s == 'ssh'
-          @workers << worker # will boot later, during the listening phase
+          boot_ssh_worker(worker)
         else
           raise "Worker type not recognized: (#{type.to_s})"
         end
@@ -211,51 +219,73 @@ module Medusa #:nodoc:
 
     def boot_local_worker(worker)
       runners = worker.fetch('runners') { raise "You must specify the number of runners" }
-      trace "Booting local worker"
-      pipe = Medusa::Pipe.new
-      child = SafeFork.fork do
-        pipe.identify_as_child
-        Medusa::Worker.new(:io => pipe, :runners => runners, :verbose => @verbose, :runner_listeners => @string_runner_event_listeners, :runner_log_file => @runner_log_file, :options => @options )
-      end
 
-      pipe.identify_as_parent
-      @workers << { :pid => child, :io => pipe, :idle => false, :type => :local }
+      connection = LocalConnection.new
+
+      # initializers.each do |initializer|
+      #   initializer.run(connection)
+      # end
+
+      pid = connection.exec_and_detach("bin/medusa worker --connect-tcp localhost:#{connection.port} --runners #{runners}")
+
+      @messages << connection.message_stream
+
+      @workers << { :pid => pid, :io => connection.message_stream, :idle => false, :type => :local }
     end
 
     def boot_ssh_worker(worker)
-      sync = Sync.new(worker, @sync, @verbose)
+      runners = worker.fetch('runners') { raise "You must specify the number of runners" }
+      target = worker.fetch('connect') { raise "You must specify an SSH connection target" }
 
-      runners = worker.fetch('runners') { raise "You must specify the number of runners"  }
+      connection = RemoteConnection.from_target(target)
 
-      pre_boot = @initializers.select { |init| init.respond_to?(:pre_boot) }
-      process_boot = @initializers.select { |init| init.respond_to?(:process_boot) }
+      trace "ssh #{user}@#{host} -R #{connection.port - 200}:localhost:#{connection.port}"
+
+      # initializers.each do |initializer|
+      #   initializer.run(connection)
+      # end
+
+      pid = connection.exec_and_detach("cd /Users/sean/src/medusa && rvm ruby-1.9.3-p286 do bin/medusa worker --connect-tcp localhost:#{connection.port} --runners #{runners}") do |out|
+        trace "From Worker: #{out}"
+      end
+
+      @messages << connection.message_stream
+
+      @workers << { :io => connection.message_stream, :idle => false, :type => :local }
+
+      # sync = Sync.new(worker, @sync, @verbose)
+
+      # runners = worker.fetch('runners') { raise "You must specify the number of runners"  }
+
+      # pre_boot = @initializers.select { |init| init.respond_to?(:pre_boot) }
+      # process_boot = @initializers.select { |init| init.respond_to?(:process_boot) }
 
 
-      ssh = Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", sync.remote_dir, nil)
-      pre_boot.each do { |init| init.pre_boot(ssh) }
+      # ssh = Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", sync.remote_dir, nil)
+      # pre_boot.each { |init| init.pre_boot(ssh) }
 
-      remote_setup = @remote.fetch("init_scripts") { [] }
-      remote_ruby = @remote.fetch("ruby") { "ruby" }
+      # remote_setup = @remote.fetch("init_scripts") { [] }
+      # remote_ruby = @remote.fetch("ruby") { "ruby" }
 
-      command = Array(remote_setup).join("; ")
-      command += " RAILS_ENV=#{@environment} "
-      command += " #{remote_ruby} -e "
+      # command = Array(remote_setup).join("; ")
+      # command += " RAILS_ENV=#{@environment} "
+      # command += " #{remote_ruby} -e "
 
-      requires = ['rubygems', 'medusa']
-      requires += Array(@remote.fetch("requires"))
+      # requires = ['rubygems', 'medusa']
+      # requires += Array(@remote.fetch("requires"))
 
-      ruby_line = requires.collect { |req| "require '#{req}'; " }.join
-      ruby_line += "Medusa::Worker.new(:io => Medusa::Stdio.new, :runners => #{runners}, :verbose => #{@verbose}, :runner_listeners => \'#{@string_runner_event_listeners}\', :runner_log_file => \'#{@runner_log_file}\' );"
+      # ruby_line = requires.collect { |req| "require '#{req}'; " }.join
+      # ruby_line += "Medusa::Worker.new(:io => Medusa::Stdio.new, :runners => #{runners}, :verbose => #{@verbose}, :runner_listeners => \'#{@string_runner_event_listeners}\', :runner_log_file => \'#{@runner_log_file}\' );"
 
-      command += ruby_line
-      # command = worker.fetch('command') {
-      #   "bundle --local --path .bundle > /dev/null; RAILS_ENV=#{@environment} bundle exec ruby -e \"require 'rubygems'; require 'medusa'; require './lib/medusa/environment'; Medusa::Worker.new(:io => Medusa::Stdio.new, :runners => #{runners}, :verbose => #{@verbose}, :runner_listeners => \'#{@string_runner_event_listeners}\', :runner_log_file => \'#{@runner_log_file}\' );\""
-      # }
+      # command += ruby_line
+      # # command = worker.fetch('command') {
+      # #   "bundle --local --path .bundle > /dev/null; RAILS_ENV=#{@environment} bundle exec ruby -e \"require 'rubygems'; require 'medusa'; require './lib/medusa/environment'; Medusa::Worker.new(:io => Medusa::Stdio.new, :runners => #{runners}, :verbose => #{@verbose}, :runner_listeners => \'#{@string_runner_event_listeners}\', :runner_log_file => \'#{@runner_log_file}\' );\""
+      # # }
 
-      trace "Booting SSH worker"
-      trace %Q(Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", #{sync.remote_dir.inspect}, #{command.inspect}))
-      ssh = Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", sync.remote_dir, command)
-      return { :io => ssh, :idle => false, :type => :ssh, :connect => sync.connect }
+      # trace "Booting SSH worker"
+      # trace %Q(Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", #{sync.remote_dir.inspect}, #{command.inspect}))
+      # ssh = Medusa::SSH.new("#{sync.ssh_opts} #{sync.connect}", sync.remote_dir, command)
+      # return { :io => ssh, :idle => false, :type => :ssh, :connect => sync.connect }
     end
 
     def shutdown_all_workers
@@ -267,39 +297,14 @@ module Medusa #:nodoc:
       @listeners.each{ |t| t.exit}
     end
 
-    def process_messages
-      Thread.abort_on_exception = true
-      mutex = Mutex.new
+    def handle_message(message, stream)
+      worker = @workers.detect { |hash| hash[:io] == stream }
+      message.handle(self, worker)
+    end
 
-      trace "Processing Messages"
-      trace "Workers: #{@workers.inspect}"
-      @workers.each do |worker|
-        @listeners << Thread.new do
-          trace "Listening to #{worker.inspect}"
-           if worker.fetch('type') { 'local' }.to_s == 'ssh'
-             worker = boot_ssh_worker(worker)
-             @workers << worker
-           end
-          while true
-            begin
-              message = worker[:io].gets
-              trace "got message: #{message}"
-              # if it exists and its for me.
-              # SSH gives us back echoes, so we need to ignore our own messages
-              if message and !message.class.to_s.index("Worker").nil?
-                mutex.synchronize do
-                  message.handle(self, worker)
-                end
-              end
-            rescue IOError
-              trace "lost Worker [#{worker.inspect}]"
-              Thread.exit
-            end
-          end
-        end
-      end
-
-      @listeners.each{ |l| l.join }
+    def run!
+      trace "Processing messages..."
+      @messages.run!
       @event_listeners.each{ |l| l.testing_end }
     end
 
