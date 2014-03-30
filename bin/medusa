@@ -31,6 +31,8 @@ Escort::App.create do |app|
 
   app.options do |opts|
     opts.opt :formatters, "Formats the output", :short => '-f', :long => '--formatter', :type => :string, :multi => true
+    opts.opt :runners, "Default number of runners", :short => :none, :long => "--runners", :type => :integer, :default => 2
+    opts.opt :workers, "Specify a worker node (user@host/runners). If none specified, defaults to a local node", :short => '-c', :long => "--connect", :type => :string, :multi => true
   end
 
   app.action do |options, arguments|

@@ -39,18 +39,21 @@ module Medusa
         files = find_files_from_arguments(arguments)
 
         begin
-          Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => [
-              {
-                'type' => 'local', 
-                'runners' => 4
-              }
-              # {
-              #   'connect' => "sean@localhost",
-              #   'type' => 'ssh', 
-              #   'runners' => 1
-              # }
-            ],
-            :verbose => true)
+          all_workers = Array(command_options[:workers]).collect do |worker|
+            if worker == "local"
+              { 'type' => 'local', 'runners' => command_options[:runners] }
+            elsif worker =~ /(.*)\@(.*)\/(\d+)/
+              { 'type' => 'ssh', 'connect' => "#{$1}@#{$2}", 'runners' => $3.to_i }
+            elsif worker =~ /(.*)\/(\d+)/
+              { 'type' => 'ssh', 'connect' => "#{$1}", 'runners' => $2.to_i }
+            elsif worker =~ /(.*)\@(.*)/
+              { 'type' => 'ssh', 'connect' => "#{$1}@#{$2}", 'runners' => command_options[:runners] }
+            end
+          end
+
+          all_workers = [{ 'type' => 'local', 'runners' => command_options[:runners] }] if all_workers.empty?
+
+          Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => all_workers, :verbose => true)
         rescue => ex
           puts ex.class.name
           puts ex.message
