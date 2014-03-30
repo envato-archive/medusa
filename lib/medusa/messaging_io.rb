@@ -12,7 +12,7 @@ module Medusa #:nodoc:
         begin
           raise IOError unless @reader
           message = @reader.gets
-          return nil unless message
+          return nil if message.to_s.chomp == ""
           return Message.build(eval(message.chomp))
         rescue SyntaxError, NameError
           # uncomment to help catch remote errors by seeing all traffic
@@ -27,7 +27,10 @@ module Medusa #:nodoc:
     def write(message)
       raise IOError unless @writer
       raise UnprocessableMessage unless message.is_a?(Medusa::Message)
-      @writer.write(message.serialize+"\n")
+
+      # Note - Sometimes output from shell commands get mixed with messages,
+      # so we wrap messages with newlines to try to avoid this.
+      @writer.write("\n"+message.serialize+"\n")
     rescue Errno::EPIPE
       raise IOError
     end

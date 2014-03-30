@@ -10,13 +10,15 @@ module Medusa #:nodoc:
       # Log the start time of a file
       def file_begin(file)
         @report[file] ||= { }
-        @report[file]['start'] = Time.now.to_f
-        @report[file]['success'] = 0
-        @report[file]['failure'] = 0
+        @report[file]['start'] ||= Time.now.to_f
+        @report[file]['success'] ||= 0
+        @report[file]['failure'] ||= 0
       end
 
       def result_received(file, result)
-        if result['status'] == 'failure' || result['status'] == 'fatal'
+        file_begin(file) # initialize just in case.
+
+        if result.failure? || result.fatal?
           @report[file]['failure'] += 1
         else
           @report[file]['success'] += 1
@@ -27,6 +29,8 @@ module Medusa #:nodoc:
       # Log the end time of a file and compute the file's testing
       # duration
       def file_end(file)
+        file_begin(file) # initialize just in case.
+
         @report[file]['end'] = Time.now.to_f
         @report[file]['duration'] = @report[file]['end'] - @report[file]['start']
         @report[file]['all_tests_passed_last_run'] = @report[file]['failure'] == 0

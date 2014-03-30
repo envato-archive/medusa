@@ -1,69 +1,46 @@
 module Medusa
   module Drivers
     class RspecDriver < Abstract
+      REDIRECTION_FILE = "/tmp/rspec-output.log"
 
-      def detect(file)
+      def self.accept?(file)
         file =~ /_spec\.rb$/
       end
 
       def execute(file)
-        begin
+        conduit = Pipe.new
+
+        pid = fork do
+          conduit.identify_as_child
+
           require 'rspec'
           require 'medusa/spec/medusa_formatter'
-        rescue LoadError => ex
-          return ex.to_s
-        end
 
-        medusa_output = EventIO.new
+          err = StringIO.new
 
-        medusa_output.on_output do |message|
-          message_bus.write Messages::Runner::Results.new(output: message, file: file)
-        end
+          medusa_output = EventIO.new
 
-        setup_environment(file, medusa_output)
-
-        @configuration.reporter.report(@world.example_count, @configuration.randomize? ? @configuration.seed : nil) do |reporter|
-          begin
-            @configuration.run_hook(:before, :suite)
-            @world.example_groups.ordered.map {|g| g.run(reporter)}.all? ? 0 : @configuration.failure_exit_code
-          ensure
-            @configuration.run_hook(:after, :suite)
+          medusa_output.on_output do |message|
+            conduit.write message
           end
-        end
-      end
 
-      private
+          STDOUT.reopen(REDIRECTION_FILE)
+          STDERR.reopen(REDIRECTION_FILE)
 
-      def parse_options(options)
-        if Array === options
-          options = RSpec::Core::ConfigurationOptions.new(options)
-          options.parse_options
+          RSpec::Core::Runner.run(["-fRSpec::Core::Formatters::MedusaFormatter", file.to_s], err, medusa_output)
         end
 
-        options
-      end
+        conduit.identify_as_parent
 
-      def setup_environment(file, output)
-        unless @core_config
-          @core_config   = RSpec::configuration.dup
+        while Process.wait(pid, Process::WNOHANG).nil?
+          message = conduit.gets
+          message_bus.write message if message
         end
 
-        @configuration = @core_config.dup
-
-        @configuration.error_stream = output
-        @configuration.output_stream = output
-
-        @configuration.instance_variable_set("@formatters", nil)
-        @configuration.instance_variable_set("@reporter", nil)
-        @configuration.formatter = 'RSpec::Core::Formatters::MedusaFormatter'
-
-        @configuration.files_to_run = [file.to_s]
-
-        @world = RSpec.world = RSpec::Core::World.new(@configuration)
-
-        @configuration.load_spec_files
-        @world.announce_filters
+      ensure
+        conduit.close
       end
+
     end
   end
 end

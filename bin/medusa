@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.expand_path(File.join(File.dirname(__FILE__), "../lib"))
+
+require 'medusa'
+require 'escort'
+
+Escort::App.create do |app|
+
+  app.version Medusa::VERSION
+  app.summary "The most beautiful parallel build system, evar."
+  app.description "Medusa runs your test suite across multiple processes and machines."
+
+  app.command :worker do |command|
+    command.summary "Starts a worker process"
+    command.description "A worker process controls runners and communicates with a master to get work"
+  
+    command.options do |opts|
+      opts.opt :socket, "Connect to the Master via a Socket", :short => :none, :long => "--connect-socket", :type => :string
+      opts.opt :tcp, "Connect to the Master via a TCP Connection (host:port)", :short => :none, :long => "--connect-tcp", :type => :string
+      opts.opt :runners, "How many runners to use to run tests", :short => :none, :long => "--runners", :type => :integer, :default => 1
+      opts.opt :runner_log_file, "Log the output to a file", :short => '-o', :long => '--out', :type => :string
+
+      opts.conflict :socket, :tcp
+    end
+
+    command.action do |options, arguments|
+      Medusa::CommandLine::WorkerCommand.new(options, arguments).execute
+    end
+  end
+
+  app.options do |opts|
+    opts.opt :formatters, "Formats the output", :short => '-f', :long => '--formatter', :type => :string, :multi => true
+  end
+
+  app.action do |options, arguments|
+    Medusa::CommandLine::MasterCommand.new(options, arguments).execute
+  end
+
+end

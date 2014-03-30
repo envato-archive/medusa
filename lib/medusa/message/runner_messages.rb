@@ -20,6 +20,65 @@ module Medusa #:nodoc:
         end
       end
 
+      class ExampleGroupStarted < Medusa::Message
+        attr_accessor :group_name
+
+        def handle(worker, runner)
+          worker.example_group_started(self, runner)
+        end
+
+        def serialize
+          super(group_name: @group_name)
+        end
+      end
+
+      class ExampleGroupFinished < Medusa::Message
+        attr_accessor :group_name
+
+        def handle(worker, runner)
+          worker.example_group_finished(self, runner)
+        end
+
+        def serialize
+          super(group_name: @group_name)
+        end
+      end
+
+      # Message for when Runner starts a specific example
+      class ExampleStarted < Medusa::Message
+        attr_accessor :example_name
+
+        def handle(worker, runner)
+          worker.example_started(self, runner)
+        end
+
+        def serialize
+          super(example_name: @example_name)
+        end
+      end
+
+      class ExampleGroupSummary < Medusa::Message
+        attr_accessor :file
+        attr_accessor :duration
+        attr_accessor :example_count
+        attr_accessor :failure_count
+        attr_accessor :pending_count
+
+        def handle(worker, runner)
+          worker.example_group_summary(self, runner)
+        end
+
+        def serialize
+          super(
+            :file => @file,
+            :duration => @duration,
+            :example_count => @example_count,
+            :failure_count => @failure_count,
+            :pending_count => @pending_count
+          )
+        end
+      end
+
       # Message for the Runner to respond with its results
       class Results < Medusa::Message
         # The output from running the test
@@ -40,12 +99,14 @@ module Medusa #:nodoc:
         end
 
         def self.fatal_error(file, exception)
-          new(file: file, output: { description: "Fatal Error", status: "fatal", file_path: file, exception: {
-              :class => exception.class.name,
-              :message => exception.message,
-              :backtrace => exception.backtrace,
-            }
-          }.to_json)
+          new(
+            file: file,
+            output: {
+              description: "Fatal Error", status: "fatal",
+              exception: exception.message,
+              exception_backtrace: exception.backtrace,
+            }.to_json
+          )
         end
       end
 
@@ -58,7 +119,7 @@ module Medusa #:nodoc:
 
         def serialize #:nodoc:
           super(:file => @file)
-        end        
+        end
       end
 
       # Message a runner sends to a worker to verify the connection
