@@ -3,7 +3,13 @@ module Medusa
     class Medusa < Abstract
 
       def run(connection, master, worker)
-        command = "bin/medusa worker --connect-tcp localhost:#{connection.port} --runners #{connection.runners}"
+        command = if File.exist?("bin/medusa")
+          "bin/medusa"
+        else
+          "medusa"
+        end
+
+        command += " worker --connect-tcp localhost:#{connection.port} --runners #{connection.runners}"
         result = Result.new(command)
 
         connection.medusa_pid = connection.exec_and_detach(command)

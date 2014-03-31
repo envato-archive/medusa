@@ -39,6 +39,6 @@ require 'medusa/initializers/abstract'
 require 'medusa/initializers/bundle_local'
 require 'medusa/initializers/bundle_cache'
 require 'medusa/initializers/medusa'
-require 'medusa/initializers/ruby'
+require 'medusa/initializers/rails'
 
 require 'medusa/command_line'
