@@ -8,6 +8,13 @@ module Medusa #:nodoc:
         end
       end
 
+      # Message indicating to the master that this worker is leaving.
+      class Died < Medusa::Message
+        def handle(master, worker)
+          master.worker_gone(worker)
+        end
+      end
+
       class ExampleGroupStarted < Medusa::Messages::Runner::ExampleGroupStarted
         def handle(master, worker)
           master.example_group_started(worker, self)

@@ -45,6 +45,16 @@ module Medusa #:nodoc:
         handle_message(message, stream)
       end
 
+      @messages.on_stream_lost do |stream, remaining|
+        if stream == @io
+          shutdown
+        elsif remaining == 1 # only the master remains
+          trace "Stopping - only master remains"
+          @io.send_message Medusa::Messages::Worker::Died.new
+          @messages.stop!
+        end
+      end
+
       # Let master know we've started up.
       @io.send_message(Medusa::Messages::Worker::Ping.new)
 
@@ -132,6 +142,15 @@ module Medusa #:nodoc:
       end
     end
 
+    # When the master indicates there's no more work, idle runners
+    # are shutdown.
+    def shutdown_idle
+      @runners.select { |r| r[:idle] }.each do |r|
+        trace "Sending Shutdown to Idle Runner"
+        r[:io].send_message(Shutdown.new)
+      end
+    end
+
     # When a master issues a shutdown order, it hits this method, which causes
     # the worker to send shutdown messages to its runners.
     def shutdown
@@ -139,10 +158,8 @@ module Medusa #:nodoc:
       trace "Notifying #{@runners.size} Runners of Shutdown"
       @runners.each do |r|
         trace "Sending Shutdown to Runner"
-        trace "\t#{r.inspect}"
         r[:io].send_message(Shutdown.new)
       end
-      Thread.exit
     end
 
     private

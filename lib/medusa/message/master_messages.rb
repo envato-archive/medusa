@@ -14,6 +14,12 @@ module Medusa #:nodoc:
           worker.shutdown
         end
       end
+
+      class NoMoreWork < Medusa::Message
+        def handle(worker)
+          worker.shutdown_idle
+        end
+      end
     end
   end
 end

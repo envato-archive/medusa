@@ -24,13 +24,15 @@ module Medusa
       data = @socket.gets
       raise IOError if data.nil?
       data.to_s.chomp
+    rescue Errno::ECONNRESET
+      raise IOError
     end
 
     # Writes data to the connection.
     def write(data)
       init_socket
       @socket.puts("#{data}")
-    rescue Errno::EPIPE
+    rescue Errno::EPIPE, Errno::ECONNRESET
       raise IOError
     end
 

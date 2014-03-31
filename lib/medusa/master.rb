@@ -36,6 +36,7 @@ module Medusa #:nodoc:
     #   * Set to false to disable automatic sorting by historical run-time per file
     def initialize(opts = { })
       redirect_output("medusa-master.log")
+      reg_trap_sighup
 
       opts.stringify_keys!
       config_file = opts.delete('config') { nil }
@@ -101,8 +102,9 @@ module Medusa #:nodoc:
         handle_message(message, stream)
       end
 
-      @messages.on_stream_lost do |stream|
-        # TODO - Remove worker from the pool.
+      @messages.on_stream_lost do |stream, remaining|
+        trace "Lost a worker. #{remaining}"
+        @messages.stop! if remaining == 0
       end
 
       boot_workers worker_cfg
@@ -110,40 +112,46 @@ module Medusa #:nodoc:
       run!
     end
 
+    def reg_trap_sighup
+      for sign in [:SIGHUP, :INT]
+        trap sign do
+          @messages.stop!
+        end
+      end
+    end    
+
     # Message handling
     def worker_begin(worker)
-      @event_listeners.each { |l| l.worker_begin(worker) }
+      notify! :worker_begin, worker
     end
 
     def worker_startup_failure(message, worker)
       @worker_failures ||= 0
       @worker_failures += 1
-      @event_listeners.each { |l| l.worker_startup_failure(worker, message.log) }
+
+      notify! :worker_startup_failure, worker, message.log
     end
 
     def runner_startup_failure(message, runner)
-      @event_listeners.each { |l| l.runner_startup_failure(runner, message.log) }
+      notify! :runner_startup_failure, runner, message.log
     end
 
     # Send a file down to a worker.
     def send_file(worker)
-      @event_listeners.each{ |l| l.testing_begin(@files) } unless @testing_begun
+      notify! :testing_begin, @files unless @testing_begun
       @testing_begun ||= true
 
-      f = @files.shift
-      if f
-        trace "Sending #{f.inspect}"
-        @event_listeners.each{ |l| l.file_begin(f) }
-        worker[:io].write(RunFile.new(:file => f))
+      if file = @files.shift
+        worker[:io].write(RunFile.new(:file => file))
       else
-        trace "No more files to send"
+        worker[:io].write(NoMoreWork.new)
       end
     end
 
     def example_started(worker, message)
       example_name = message.example_name
 
-      @event_listeners.each { |l| l.example_begin(example_name) }
+      notify! :example_begin, example_name
     end
 
     # Process the results coming back from the worker.
@@ -162,39 +170,31 @@ module Medusa #:nodoc:
         if result.failure? || result.fatal?
           @failed_files << message.file
         end
-        @event_listeners.each { |l| l.result_received(message.file, result) }
+
+        notify! :result_received, message.file, result
       end
     end
 
     def example_group_started(worker, message)
-      @event_listeners.each { |l| l.example_group_started(message.group_name) }
+      notify! :example_group_started, message.group_name
     end
 
     def example_group_finished(worker, message)
-      @event_listeners.each { |l| l.example_group_finished(message.group_name) }
+      notify! :example_group_finished, message.group_name
     end
 
     def example_group_summary(worker, message)
       summary = "Finished #{message.example_count} in #{message.duration}: #{message.failure_count} failed, #{message.pending_count} pending"
       trace summary
 
-      @event_listeners.each { |l| l.file_summary(message) }
+      notify! :file_summary, message
     end
 
     def file_complete(message, _worker)
       @incomplete_files.delete_at(@incomplete_files.index(message.file))
       trace "#{@incomplete_files.size} Files Remaining"
 
-      @event_listeners.each { |l| l.file_end(message.file) }
-
-      if @incomplete_files.empty?
-
-        @workers.each do |worker|
-          @event_listeners.each{ |l| l.worker_end(worker) }
-        end
-
-        shutdown_all_workers
-      end
+      notify! :file_end, message.file
     end
 
     def initializer_start(command, worker)
@@ -211,6 +211,11 @@ module Medusa #:nodoc:
 
     def initializer_failure(worker, initializer, result)
       @event_listeners.each { |l| l.initializer_failure(worker, initializer, result) }
+    end
+
+    def worker_gone(worker)
+      worker[:io].close
+      @workers.delete(worker)      
     end
 
     # A text report of the time it took to run each file
@@ -249,8 +254,6 @@ module Medusa #:nodoc:
         end
       end
 
-      wait_until_alive(connection.message_stream)
-
       @messages << connection.message_stream
 
       @workers << { :id => connection.worker_id, :pid => connection.medusa_pid, :io => connection.message_stream, :idle => false, :type => :local }
@@ -280,9 +283,7 @@ module Medusa #:nodoc:
       trace "Shutting down all workers"
       @workers.each do |worker|
         worker[:io].write(Shutdown.new) if worker[:io]
-        worker[:io].close if worker[:io]
       end
-      @listeners.each{ |t| t.exit}
     end
 
     def handle_message(message, stream)
@@ -301,17 +302,6 @@ module Medusa #:nodoc:
       @event_listeners.each{ |l| l.testing_end }
     end
 
-    def wait_until_alive(message_stream)
-      begin
-        Timeout.timeout(4000) do
-          message_stream.wait_for_message
-        end
-
-      rescue TimeoutError
-        raise "Worker didn't start in time"
-      end      
-    end
-
     def sort_files_from_report
       if File.exists? heuristic_file
         report = YAML.load_file(heuristic_file)
@@ -328,6 +318,10 @@ module Medusa #:nodoc:
 
     def heuristic_file
       @heuristic_file ||= File.join(Dir.consistent_tmpdir, 'medusa_heuristics.yml')
+    end
+
+    def notify!(event, *args)
+      @event_listeners.each { |l| l.send(event, *args) if l.respond_to?(event) }
     end
   end
 end

@@ -32,6 +32,10 @@ module Medusa
       w.close rescue nil
     end
 
+    def target
+      "the local machine"
+    end
+
     def terminate!
       
     end

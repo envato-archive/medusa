@@ -44,6 +44,7 @@ module Medusa #:nodoc:
         runner_begin
       rescue => ex
         @io.write(RunnerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
+        $0 = "[medusa] Runner failed."
         return
       end
 
@@ -104,8 +105,15 @@ module Medusa #:nodoc:
 
     # Stop running
     def stop
-      runner_end if @runner_began
-      @runner_began = @running = false
+      if @runner_began
+        @runner_began = false
+        runner_end
+      end
+
+      @running = false
+      @io.close
+
+      exit
     end
 
     def runner_end
@@ -174,7 +182,7 @@ module Medusa #:nodoc:
       return output.join("\n")
     end
 
-    # run all the Specs in an RSpec file (NOT IMPLEMENTED)
+    # run all the Specs in an RSpec file
     def run_rspec_file(file)
       Drivers::RspecDriver.new(@io).execute(file)
     end

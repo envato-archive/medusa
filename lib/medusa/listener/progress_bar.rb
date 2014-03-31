@@ -62,7 +62,7 @@ module Medusa #:nodoc:
       def initializer_failure(worker, initializer, result)
         @worker_failures << [
           "Initializer failed: #{initializer.class}",
-          "Command: #{initializer.command}",
+          "Command: #{result.command}",
           result ? result.output.split("\n") : ""
         ].flatten
       end
