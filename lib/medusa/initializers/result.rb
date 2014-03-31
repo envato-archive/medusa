@@ -7,7 +7,11 @@ module Medusa
 
       def initialize(command)
         @command = command
-        @output = []      
+        @output = []
+      end
+
+      def self.success
+        new("<none>").tap { |r| r.exit_status = 0 }
       end
 
       def <<(line)

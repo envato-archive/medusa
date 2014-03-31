@@ -20,6 +20,7 @@ Escort::App.create do |app|
       opts.opt :tcp, "Connect to the Master via a TCP Connection (host:port)", :short => :none, :long => "--connect-tcp", :type => :string
       opts.opt :runners, "How many runners to use to run tests", :short => :none, :long => "--runners", :type => :integer, :default => 1
       opts.opt :runner_log_file, "Log the output to a file", :short => '-o', :long => '--out', :type => :string
+      opts.opt :worker_id, "The ID of this worker", :short => :none, :long => "--id", :type => :string
 
       opts.conflict :socket, :tcp
     end

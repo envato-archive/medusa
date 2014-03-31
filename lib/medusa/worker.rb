@@ -10,7 +10,7 @@ module Medusa #:nodoc:
     include Medusa::Messages::Worker
     traceable('WORKER')
 
-    attr_reader :runners, :verbose, :runner_log_file
+    attr_reader :runners, :verbose, :runner_log_file, :io, :worker_id
 
     def self.setup(&block)
       @setup ||= []
@@ -29,6 +29,7 @@ module Medusa #:nodoc:
 
       trace "Starting worker"
 
+      @worker_id = opts.fetch(:worker_id) { raise "Worker ID required" }
       @verbose = opts.fetch(:verbose) { false }
       @io = opts.fetch(:io) { raise "No IO Object" }
       @runners = []
@@ -51,6 +52,9 @@ module Medusa #:nodoc:
 
       begin
         Worker.setups.each { |proc| proc.call }
+        if File.exist?("medusa_worker_init.rb")
+          eval(IO.read("medusa_worker_init.rb"))
+        end
 
         @runner_event_listeners = Array(opts.fetch(:runner_listeners) { nil })
         @runner_event_listeners.select{|l| l.is_a? String}.each do |l|

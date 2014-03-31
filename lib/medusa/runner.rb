@@ -12,6 +12,8 @@ module Medusa #:nodoc:
 
     DEFAULT_LOG_FILE = 'medusa-runner.log'
 
+    attr_reader :io
+
     def self.setup(&block)
       @setup ||= []
       @setup << block

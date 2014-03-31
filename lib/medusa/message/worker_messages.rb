@@ -62,6 +62,18 @@ module Medusa #:nodoc:
       #   end
       # end
 
+      class InitializerMessage < Medusa::Message
+        attr_accessor :output
+
+        def serialize #:nodoc:
+          super(:output => @output)
+        end        
+
+        def handle(master, worker)
+          master.initializer_output(worker, self, output)
+        end
+      end
+
       class WorkerStartupFailure < Medusa::Message
         attr_accessor :log
 
@@ -71,7 +83,6 @@ module Medusa #:nodoc:
 
         def handle(master, worker)
           master.worker_startup_failure(self, worker)
-          raise IOError, "Worker failed to startup"
         end
       end
 

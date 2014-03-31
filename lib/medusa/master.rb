@@ -95,8 +95,6 @@ module Medusa #:nodoc:
       trace "  Workers: (#{worker_cfg.inspect})"
       trace "  Verbose: (#{@verbose.inspect})"
 
-      @event_listeners.each{ |l| l.testing_begin(@files) }
-
       @messages = MessageStreamMultiplexer.new
 
       @messages.on_message do |message, stream|
@@ -129,6 +127,9 @@ module Medusa #:nodoc:
 
     # Send a file down to a worker.
     def send_file(worker)
+      @event_listeners.each{ |l| l.testing_begin(@files) } unless @testing_begun
+      @testing_begun ||= true
+
       f = @files.shift
       if f
         trace "Sending #{f.inspect}"
@@ -205,7 +206,7 @@ module Medusa #:nodoc:
     end
 
     def initializer_output(worker, initializer, line)
-      trace "#{initializer.class}: #{line}"
+      @event_listeners.each { |l| l.initializer_output(line, initializer, worker) }
     end
 
     def initializer_failure(worker, initializer, result)
@@ -240,7 +241,7 @@ module Medusa #:nodoc:
       connection = LocalConnection.new(runners)
 
       @initializers.each do |initializer|
-        result = initializer.run(connection, self, nil)
+        result = initializer.run(connection, self, { :id => connection.worker_id })
         unless result.ok?
           connection.terminate!
           initializer_failure(worker, initializer, result)
@@ -252,7 +253,7 @@ module Medusa #:nodoc:
 
       @messages << connection.message_stream
 
-      @workers << { :pid => connection.medusa_pid, :io => connection.message_stream, :idle => false, :type => :local }
+      @workers << { :id => connection.worker_id, :pid => connection.medusa_pid, :io => connection.message_stream, :idle => false, :type => :local }
     end
 
     def boot_ssh_worker(worker)
@@ -260,8 +261,6 @@ module Medusa #:nodoc:
       target = worker.fetch('connect') { raise "You must specify an SSH connection target" }
 
       connection = RemoteConnection.from_target(target)
-
-      trace "ssh #{user}@#{host} -R #{connection.port - 200}:localhost:#{connection.port}"
 
       # initializers.each do |initializer|
       #   initializer.run(connection)
@@ -296,6 +295,8 @@ module Medusa #:nodoc:
         trace "Processing messages..."
         @messages.run!
       end
+
+      trace "Testing end"
 
       @event_listeners.each{ |l| l.testing_end }
     end

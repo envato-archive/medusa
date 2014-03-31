@@ -2,20 +2,35 @@ module Medusa #:nodoc:
   module Listener #:nodoc:
     # Output a progress bar as files are completed
     class ProgressBar < Medusa::Listener::Abstract
-      # Store the total number of files
-      def testing_begin(files)
-        @total_files = files.size
+
+      def initialize(*args)
+        require 'curses'
+
+        super
+
+        @workers = Hash.new
+        @mode = :setup
+        @worker_failures = []
+        @runner_failures = []
+        @error_collection = []
         @files_completed = 0
         @test_output = ""
         @errors = false
         @tests_executed = 0
         @fatals = 0
-        @error_collection = []
-        @worker_failures = []
-        @runner_failures = []
+
+        Curses.noecho
+        Curses.init_screen        
+      end
+
+      # Store the total number of files
+      def testing_begin(files)
+        @total_files = files.size
         @start_at = Time.now
 
         @files = files.dup
+
+        @mode = :test
 
         render_progress_bar
       end
@@ -36,11 +51,19 @@ module Medusa #:nodoc:
         @output.write("#{command}\n")
       end
 
+      def initializer_output(line, initializer, worker)
+        line = line.to_s.split("\n").last
+        id = worker.respond_to?(:[]) ? worker[:id] : worker.worker_id
+        
+        @workers[id] = "#{initializer.class.name}: #{line}"
+        render
+      end
+
       def initializer_failure(worker, initializer, result)
         @worker_failures << [
           "Initializer failed: #{initializer.class}",
           "Command: #{initializer.command}",
-          result.output.split("\n")
+          result ? result.output.split("\n") : ""
         ].flatten
       end
 
@@ -64,12 +87,32 @@ module Medusa #:nodoc:
 
       # Break the line
       def testing_end
-        render_progress_bar
-        render_time
+        Curses.close_screen
+
+        if @mode == :test
+          render_progress_bar
+          render_time
+        end
+
         render_errors
       end
 
       private
+
+      def render
+        if @mode == :setup
+          Curses.clear
+
+          @workers.each_with_index do |(worker, message), index|
+            Curses.setpos(index, 0)
+            Curses.addstr("Worker #{index}: #{message}")
+          end
+
+          Curses.refresh
+        else
+          render_progress_bar
+        end
+      end
 
       def render_time
         duration = Time.now - @start_at

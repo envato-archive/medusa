@@ -9,7 +9,9 @@ module Medusa
           "medusa"
         end
 
-        command += " worker --connect-tcp localhost:#{connection.port} --runners #{connection.runners}"
+        command = "/Users/elseano/src/medusa/bin/medusa"
+
+        command += " worker --connect-tcp localhost:#{connection.port} --runners #{connection.runners} --id #{connection.worker_id}"
         result = Result.new(command)
 
         connection.medusa_pid = connection.exec_and_detach(command)

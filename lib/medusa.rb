@@ -41,4 +41,6 @@ require 'medusa/initializers/bundle_cache'
 require 'medusa/initializers/medusa'
 require 'medusa/initializers/rails'
 
+require 'medusa/worker_initializer'
+
 require 'medusa/command_line'

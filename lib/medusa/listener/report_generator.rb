@@ -9,6 +9,7 @@ module Medusa #:nodoc:
 
       # Log the start time of a file
       def file_begin(file)
+        @report ||= {}
         @report[file] ||= { }
         @report[file]['start'] ||= Time.now.to_f
         @report[file]['success'] ||= 0

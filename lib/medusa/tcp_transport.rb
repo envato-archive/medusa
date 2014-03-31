@@ -30,6 +30,8 @@ module Medusa
     def write(data)
       init_socket
       @socket.puts("#{data}")
+    rescue Errno::EPIPE
+      raise IOError
     end
 
     def close

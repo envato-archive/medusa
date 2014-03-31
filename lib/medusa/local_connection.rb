@@ -1,12 +1,13 @@
 module Medusa
   class LocalConnection
 
-    attr_reader :runners
+    attr_reader :runners, :worker_id
     attr_accessor :medusa_pid
 
     def initialize(runners)
       @port = TcpTransport.next_available_port + 100
       @runners = runners
+      @worker_id = rand(1000000)
     end
 
     def exec(command, &output_handler)
