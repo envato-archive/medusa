@@ -1,14 +1,22 @@
 module Medusa
   class LocalConnection
 
-    def initialize
+    attr_reader :runners
+    attr_accessor :medusa_pid
+
+    def initialize(runners)
       @port = TcpTransport.next_available_port + 100
+      @runners = runners
     end
 
     def exec(command, &output_handler)
+      r, w = IO.pipe
       pid = Process.spawn(command, :out => w, :err => w)
 
-      while Process.wait(pid, Process::WNOHANG).nil?
+      while true
+        termination_status = Process.wait(pid, Process::WNOHANG)
+        return $?.exitstatus if termination_status
+
         buffer = begin
           r.read_nonblock(100_000)
         rescue IO::WaitReadable
@@ -18,7 +26,13 @@ module Medusa
         yield buffer if block_given? && buffer        
       end
 
-      w.close
+    ensure
+      r.close rescue nil
+      w.close rescue nil
+    end
+
+    def terminate!
+      
     end
 
     def port

@@ -38,6 +38,20 @@ module Medusa
 
         files = find_files_from_arguments(arguments)
 
+        initializers = []
+
+        if File.exist?("vendor/cache")
+          initializers << Medusa::Initializers::BundleLocal.new
+        elsif File.exist?("Gemfile")
+          initializers << Medusa::Initializers::BundleCache.new
+        end
+
+        if File.exist?("config/environment.rb")
+          initializers << Medusa::Initializers::Rails.new
+        end
+
+        initializers << Medusa::Initializers::Medusa.new
+
         begin
           all_workers = Array(command_options[:workers]).collect do |worker|
             if worker == "local"
@@ -53,7 +67,7 @@ module Medusa
 
           all_workers = [{ 'type' => 'local', 'runners' => command_options[:runners] }] if all_workers.empty?
 
-          Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => all_workers, :verbose => true)
+          Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => all_workers, :verbose => true, :initializers => initializers)
         rescue => ex
           puts ex.class.name
           puts ex.message

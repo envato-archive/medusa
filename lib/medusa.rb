@@ -34,8 +34,10 @@ require 'medusa/drivers/cucumber_driver'
 require 'medusa/drivers/event_io'
 require 'medusa/drivers/acceptor'
 
+require 'medusa/initializers/result'
 require 'medusa/initializers/abstract'
 require 'medusa/initializers/bundle_local'
+require 'medusa/initializers/bundle_cache'
 require 'medusa/initializers/medusa'
 require 'medusa/initializers/ruby'
 

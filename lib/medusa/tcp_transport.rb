@@ -52,12 +52,14 @@ module Medusa
       if @server
         @socket = @server.accept
       else
-        begin
-          @socket = TCPSocket.new(@host, @port)
-        rescue Errno::ECONNREFUSED
-          puts "Waiting to connect to #{@host}:#{@port}"
-          sleep(0.1)
-          retry
+        Timeout.timeout(4000) do
+          begin
+            @socket = TCPSocket.new(@host, @port)
+          rescue Errno::ECONNREFUSED
+            puts "Waiting to connect to #{@host}:#{@port}"
+            sleep(0.1)
+            retry
+          end
         end
       end
 

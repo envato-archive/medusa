@@ -36,6 +36,14 @@ module Medusa #:nodoc:
         @output.write("#{command}\n")
       end
 
+      def initializer_failure(worker, initializer, result)
+        @worker_failures << [
+          "Initializer failed: #{initializer.class}",
+          "Command: #{initializer.command}",
+          result.output.split("\n")
+        ].flatten
+      end
+
       def result_received(file, result)
         if result.failure? || result.fatal?
           @errors = true
@@ -79,14 +87,18 @@ module Medusa #:nodoc:
         if @runner_failures.length > 0
           @output.write ("\n\n#{@runner_failures.length} runner(s) failed to startup\n\n")
           @runner_failures.each do |log|
-            @output.write("#{log}\n\n")
+            Array(log).each do |line|
+              @output.write("#{line}\n")
+            end
           end
         end
 
         if @worker_failures.length > 0
           @output.write ("\n\n#{@worker_failures.length} worker(s) failed to startup\n\n")
           @worker_failures.each do |log|
-            @output.write("#{log}\n\n")
+            Array(log).each do |line|
+              @output.write("#{line}\n")
+            end
           end
         end
 

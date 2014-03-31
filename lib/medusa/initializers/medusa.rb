@@ -2,11 +2,14 @@ module Medusa
   module Initializers
     class Medusa < Abstract
 
-      def run(command_stream)
-        command_stream.write_raw("require 'rubygems'\n")
-        command_stream.write_raw("require 'medusa'\n")
+      def run(connection, master, worker)
+        command = "bin/medusa worker --connect-tcp localhost:#{connection.port} --runners #{connection.runners}"
+        result = Result.new(command)
 
-        command_stream.write_raw("Medusa::Worker.new(:io => Medusa::Stdio.new, :runners => #{worker[:runners] || 1}, :verbose => #{master.verbose}, :runner_log_file => \'#{master.runner_log_file}\')")
+        connection.medusa_pid = connection.exec_and_detach(command)
+
+        result.exit_status = connection.medusa_pid.to_i != 0 ? 0 : -1
+        return result
       end
 
     end

@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "medusa"
-  spec.version       = "0.0.14"
+  spec.version       = "0.0.18"
   spec.authors       = ["Nick Gauthier", "Sean St. Quentin", "Pablo Lee"]
   spec.email         = ["ngauthier@gmail.com", "sean.st.quentin@envato.com", "pablo.lee@envato.com"]
   spec.description   = %q{Spread your tests over multiple machines to test your code faster.}
