@@ -38,7 +38,7 @@ module Medusa
 
         files = find_files_from_arguments(arguments)
 
-        initializers = []
+        initializers = [Medusa::Initializers::RSync.new]
 
         if File.exist?("vendor/cache")
           initializers << Medusa::Initializers::BundleLocal.new
@@ -67,7 +67,9 @@ module Medusa
 
           all_workers = [{ 'type' => 'local', 'runners' => command_options[:runners] }] if all_workers.empty?
 
-          Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => all_workers, :verbose => true, :initializers => initializers)
+          root = `pwd`.chomp
+
+          Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => all_workers, :verbose => true, :initializers => initializers, :root => root)
         rescue => ex
           puts ex.class.name
           puts ex.message

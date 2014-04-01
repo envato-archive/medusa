@@ -33,7 +33,12 @@ module Medusa
     end
 
     def target
-      "the local machine"
+      user = `who am i`.split(/\s+/).first
+      "/tmp/medusa/local-#{user}-#{@port}"
+    end
+
+    def work_path
+      Pathname.new(target)
     end
 
     def terminate!

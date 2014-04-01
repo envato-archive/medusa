@@ -3,7 +3,9 @@ module Medusa
     class Medusa < Abstract
 
       def run(connection, master, worker)
-        command = if File.exist?("bin/medusa")
+        command = "cd #{connection.work_path} && "
+        
+        command += if File.exist?("bin/medusa")
           "bin/medusa"
         else
           "medusa"

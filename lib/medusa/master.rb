@@ -15,7 +15,7 @@ module Medusa #:nodoc:
     include Open3
     traceable('MASTER')
 
-    attr_reader :failed_files, :verbose, :runner_log_file
+    attr_reader :failed_files, :verbose, :runner_log_file, :project_root
 
     # Create a new Master
     #
@@ -80,6 +80,7 @@ module Medusa #:nodoc:
       @autosort = opts.fetch('autosort') { true }
       @sync = opts.fetch('sync') { nil }
       @environment = opts.fetch('environment') { 'test' }
+      @project_root = opts.fetch('root') { `pwd`.chomp }
 
       @options = opts.fetch('options') { '' }
 

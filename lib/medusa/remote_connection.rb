@@ -1,4 +1,3 @@
-require 'net/ssh'
 
 module Medusa
   class RemoteConnection
@@ -19,6 +18,9 @@ module Medusa
     end
 
     def initialize(host, username = nil)
+      
+      require 'net/ssh'
+
       @host = host
       @username = username
       @port = TcpTransport.next_available_port

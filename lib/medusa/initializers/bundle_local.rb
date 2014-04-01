@@ -2,9 +2,9 @@ module Medusa
   module Initializers
     class BundleLocal < Abstract
       def run(connection, master, worker)
-        result = Result.new("bundle --local --path .bundle")
+        result = Result.new("cd #{connection.work_path} && bundle --local --path .bundle")
 
-        status = connection.exec("bundle --local --path .bundle") do |output|
+        status = connection.exec(result.command) do |output|
           master.initializer_output(worker, self, output)
           result << output
         end

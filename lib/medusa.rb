@@ -1,4 +1,5 @@
 require 'json'
+require 'pathname'
 
 require 'medusa/version'
 require 'medusa/trace'
@@ -40,6 +41,7 @@ require 'medusa/initializers/bundle_local'
 require 'medusa/initializers/bundle_cache'
 require 'medusa/initializers/medusa'
 require 'medusa/initializers/rails'
+require 'medusa/initializers/rsync'
 
 require 'medusa/worker_initializer'
 

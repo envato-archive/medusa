@@ -1,3 +1,5 @@
+require 'timeout'
+
 module Medusa
   class TcpTransport
     attr_reader :host, :port
@@ -8,9 +10,10 @@ module Medusa
       @port
     end
 
-    def initialize(host, port = nil)
+    def initialize(host, port = nil, timeout = 4)
       @host = host
       @port = port || TcpTransport.next_available_port
+      @timeout = timeout
     end
 
     def server!
@@ -56,14 +59,14 @@ module Medusa
       if @server
         @socket = @server.accept
       else
-        Timeout.timeout(4000) do
-          begin
-            @socket = TCPSocket.new(@host, @port)
-          rescue Errno::ECONNREFUSED
-            puts "Waiting to connect to #{@host}:#{@port}"
-            sleep(0.1)
-            retry
-          end
+        time = 0
+        begin
+          @socket = TCPSocket.new(@host, @port)
+        rescue Errno::ECONNREFUSED
+          raise if time > @timeout
+          sleep(0.1)
+          time += 0.1
+          retry
         end
       end
 
