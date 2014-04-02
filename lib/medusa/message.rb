@@ -15,12 +15,20 @@ module Medusa #:nodoc:
   #   Medusa::Message.build(eval(@m.serialize)).my_var
   #     => "my value"
   class Message
+
+    # Include in a message when its raised from a runner and needs to get to the master.
+    module WorkerPassthrough
+      def handle_by_worker(worker)
+        worker.send_to_master(self)
+      end
+    end
+
     # Create a new message. Opts is a hash where the keys
     # are attributes of the message and the values are
     # set to the attribute.
     def initialize(values = {})
-      self.class.message_attrs.each do |attr|
-        self.send("#{attr}=", values[attr])
+      values.each do |key, value|
+        self.send("#{key}=", value) if respond_to?(key.to_sym)
       end
     end
 

@@ -31,8 +31,6 @@ module Medusa
 
     def run!
       loop do
-        # sleep(0.1) while @received_messages.empty?
-
         event = begin
           Timeout.timeout(0.1) do
             @received_messages.pop
