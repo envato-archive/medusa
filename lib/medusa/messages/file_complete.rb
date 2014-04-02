@@ -3,7 +3,10 @@ module Medusa #:nodoc:
     class FileComplete < Medusa::Message
       message_attr :file
 
-      include WorkerPassthrough
+      def handle_by_worker(worker, runner)
+        runner.free = true
+        worker.send_to_master(self)
+      end
 
       def handle_by_master(master)
         master.file_complete(self)

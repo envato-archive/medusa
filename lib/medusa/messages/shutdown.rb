@@ -5,7 +5,7 @@ module Medusa
     class Shutdown < Medusa::Message
 
       def handle_by_worker(worker)
-        worker.shutdown
+        worker.terminate!
       end
 
       def handle_by_runner(runner)

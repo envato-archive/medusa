@@ -6,7 +6,7 @@ module Medusa
       message_attr :file
 
       def handle_by_worker(worker)
-        runner = worker.lock_runner
+        runner = worker.allocate_free_runner
         runner.send_message(self)
       end
 

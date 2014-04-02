@@ -6,9 +6,7 @@ module Medusa
     class NoMoreWork < Medusa::Message
 
       def handle_by_worker(worker)
-        while runner = worker.lock_runner
-          runner.send_message(Shutdown.new)
-        end
+        worker.shutdown_idle_runners
       end
 
     end
