@@ -12,15 +12,6 @@ module Medusa #:nodoc:
 
     attr_reader :runners, :verbose, :runner_log_file, :io, :worker_id
 
-    def self.setup(&block)
-      @setup ||= []
-      @setup << block
-    end
-
-    def self.setups
-      @setup || []
-    end
-
     # Create a new worker.
     # * io: The IO object to use to communicate with the master
     # * num_runners: The number of runners to launch
