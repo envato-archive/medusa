@@ -80,7 +80,7 @@ module Medusa #:nodoc:
       end
 
       # Message for the Runner to respond with its results
-      class Results < Medusa::Message
+      class Result < Medusa::Message
         # The output from running the test
         attr_accessor :output
         # The file that was run
@@ -107,6 +107,42 @@ module Medusa #:nodoc:
               exception_backtrace: exception.backtrace,
             }.to_json
           )
+        end
+      end
+
+      class TestResult < Medusa::Message
+        attr_accessor :name, :status, :duration, 
+        attr_accessor :exception_message, :exception_class, :exception_backtrace
+        attr_accessor :file
+        attr_accessor :driver
+
+        def serialize
+          super(to_hash)
+        end
+
+        def handle(worker, runner)
+          worker.relay_results(self, runner)
+        end
+
+        def exception=(value)
+          if value
+            @exception_class = value.class.name
+            @exception_message = value.message
+            @exception_backtrace = value.backtrace
+          else
+            @exception_class = @exception_message = @exception_backtrace = nil
+          end
+        end
+
+        def to_hash
+          {
+            name: name,
+            status: status,
+            duration: duration,
+            exception_message: exception_message,
+            exception_class: exception_class,
+            exception_backtrace: exception_backtrace
+          }
         end
       end
 
