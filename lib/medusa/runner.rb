@@ -7,7 +7,7 @@ module Medusa #:nodoc:
   # The general convention is to have one Runner for each logical processor
   # of a machine.
   class Runner
-    include Medusa::Messages::Runner
+    # include Medusa::Messages::Runner
     traceable('RUNNER')
 
     DEFAULT_LOG_FILE = 'medusa-runner.log'

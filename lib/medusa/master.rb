@@ -11,7 +11,7 @@ module Medusa #:nodoc:
   class YmlLoadError < StandardError; end
 
   class Master
-    include Medusa::Messages::Master
+    # include Medusa::Messages::Master
     include Open3
     traceable('MASTER')
 

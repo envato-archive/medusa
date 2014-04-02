@@ -18,30 +18,49 @@ module Medusa #:nodoc:
     # Create a new message. Opts is a hash where the keys
     # are attributes of the message and the values are
     # set to the attribute.
-    def initialize(opts = {})
-      opts.delete :class
-      opts.each do |variable,value|
-        self.send("#{variable}=",value)
+    def initialize(values = {})
+      self.class.message_attrs.each do |attr|
+        self.send("#{attr}=", values[attr])
       end
     end
 
     # Build a message from a hash. The hash must contain
     # the :class symbol, which is the class of the message
     # that it will build to.
-    def self.build(hash)
+    def self.build(hash)      
       hash.delete(:class).new(hash)
+    end
+
+    def self.deserialize(string)
+      build(eval(string))
     end
 
     # Serialize the message for output on an IO channel.
     # This is really just a string representation of a hash
     # with no newlines. It adds in the class automatically
-    def serialize(opts = {})
-      opts.merge({:class => self.class}).inspect
+    def serialize
+      data = Hash.new
+      self.class.message_attrs.each do |attr|
+        data[attr] = send(attr)
+      end
+
+      data.merge({:class => self.class}).inspect
+    end
+
+    def self.message_attrs
+      @message_attrs
+    end
+
+    def self.message_attr(name)
+      @message_attrs ||= []
+      @message_attrs << name
+
+      attr_accessor name
     end
   end
 end
 
-require 'medusa/message/runner_messages'
-require 'medusa/message/worker_messages'
-require 'medusa/message/master_messages'
+# require 'medusa/message/runner_messages'
+# require 'medusa/message/worker_messages'
+# require 'medusa/message/master_messages'
 

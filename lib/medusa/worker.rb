@@ -7,7 +7,7 @@ module Medusa #:nodoc:
   # The general convention is to have one Worker per machine on a distributed
   # network.
   class Worker
-    include Medusa::Messages::Worker
+    # include Medusa::Messages::Worker
     traceable('WORKER')
 
     attr_reader :runners, :verbose, :runner_log_file, :io, :worker_id
@@ -119,10 +119,10 @@ module Medusa #:nodoc:
 
     # When the master sends a file down to the worker, it hits this
     # method. Then the worker delegates the file down to a runner.
-    def delegate_file(message)
+    def send_work_to_runner(message)
       runner = idle_runner
       runner[:idle] = false
-      runner[:io].send_message(RunFile.new(eval(message.serialize)))
+      runner[:io].send_message(message)
     end
 
     # When a runner finishes, it sends the results up to the worker. Then the
@@ -212,7 +212,6 @@ module Medusa #:nodoc:
     end
 
     def handle_message(message, from)
-      trace "Handle message #{message}"
       if from == @io && !message.class.to_s.index("Master").nil?
         message.handle(self)
       elsif !message.class.to_s.index("Runner").nil?
