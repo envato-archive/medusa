@@ -27,6 +27,11 @@ module Medusa
       @free = value
     end
 
+    def ready=(value)
+      @ready = value
+      @free = value
+    end
+
     def boot!
       transport = TcpTransport.new("localhost", 19100 + self.id)
       port = transport.port
