@@ -24,7 +24,8 @@ module Medusa
       end
 
       def self.run_init_script(script, executor)
-        class_name = File.basename(script).sub(".rb", "").gsub(/^([a-z])|_([a-z])/) { |x| x.upcase }.gsub("_", "")
+        class_name = executor.class.name.split("::").last
+        class_name += File.basename(script).sub(".rb", "").gsub(/^([a-z])|_([a-z])/) { |x| x.upcase }.gsub("_", "")
 
         load(script)
 

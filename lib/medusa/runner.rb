@@ -12,7 +12,7 @@ module Medusa #:nodoc:
 
     DEFAULT_LOG_FILE = 'medusa-runner.log'
 
-    attr_reader :io
+    attr_reader :io, :runner_id
 
     def self.setup(&block)
       @setup ||= []
@@ -42,7 +42,7 @@ module Medusa #:nodoc:
 
       begin
         runner_begin
-      rescue => ex
+      rescue StandardError, LoadError, SyntaxError => ex
         @io.write(RunnerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
         $0 = "[medusa] Runner failed."
         return
@@ -74,7 +74,9 @@ module Medusa #:nodoc:
       @event_listeners.each {|l| l.runner_begin( self ) }
 
       trace "Running environment setup"
-      Runner.setups.each { |proc| proc.call(@runner_id) }
+      if File.exist?("medusa_runner_init.rb")
+        eval(IO.read("medusa_runner_init.rb"))
+      end
     end
 
     # Run a test file and report the results

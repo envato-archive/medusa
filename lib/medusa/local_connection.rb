@@ -4,9 +4,10 @@ module Medusa
     attr_reader :runners, :worker_id
     attr_accessor :medusa_pid
 
-    def initialize(runners)
+    def initialize(runners, project_root)
       @port = TcpTransport.next_available_port + 100
       @runners = runners
+      @project_root = project_root
       @worker_id = rand(1000000)
     end
 
@@ -34,7 +35,7 @@ module Medusa
 
     def target
       user = `who am i`.split(/\s+/).first
-      "/tmp/medusa/local-#{user}-#{@port}"
+      "/tmp/medusa/local-#{@project_root.basename}-#{@port}"
     end
 
     def work_path

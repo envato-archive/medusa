@@ -5,13 +5,13 @@ module Medusa
       def run(connection, master, worker)
         command = "cd #{connection.work_path} && "
         
-        command += if File.exist?("bin/medusa")
-          "bin/medusa"
-        else
-          "medusa"
-        end
+        # command += if File.exist?("bin/medusa")
+        #   "bin/medusa"
+        # else
+        #   "medusa"
+        # end
 
-        # command = "/Users/elseano/src/medusa/bin/medusa"
+        command += "/Users/elseano/src/medusa/bin/medusa"
 
         command += " worker --connect-tcp localhost:#{connection.port} --runners #{connection.runners} --id #{connection.worker_id}"
         result = Result.new(command)

@@ -20,7 +20,7 @@ module Medusa #:nodoc:
       def initializer_failure(worker, initializer, result)
       end
 
-      def initializer_output(line, initializer, worker)
+      def initializer_output(message, worker)
       end
 
 

@@ -38,7 +38,6 @@ module Medusa
             @received_messages.pop
           end
         rescue Timeout::Error
-          puts "Check #{@stopped} #{@streams.values.inspect}"
           []
         end
 

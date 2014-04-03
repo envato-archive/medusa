@@ -44,5 +44,6 @@ require 'medusa/initializers/rails'
 require 'medusa/initializers/rsync'
 
 require 'medusa/worker_initializer'
+require 'medusa/runner_initializer'
 
 require 'medusa/command_line'

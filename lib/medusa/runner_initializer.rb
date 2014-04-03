@@ -1,12 +1,15 @@
 module Medusa
-  class WorkerInitializer
+  class RunnerInitializer
 
-    def initialize(worker)
-      @worker = worker  
+    attr_reader :runner_id
+
+    def initialize(runner)
+      @runner = runner  
+      @runner_id = runner.runner_id
     end
 
     def exec(command)
-      @worker.io.send_message(Messages::Worker::InitializerMessage.new(:initializer => "<WorkerInitializer> #{self.class.name}", :output => command))
+      @runner.io.send_message(Messages::Runner::InitializerMessage.new(:initializer => "<RunnerInitializer> #{self.class.name}", :output => command))
 
       r, w = IO.pipe
       pid = Process.spawn(command, :out => w, :err => w)
@@ -21,7 +24,7 @@ module Medusa
           nil
         end
 
-        @worker.io.send_message(Messages::Worker::InitializerMessage.new(:initializer => "<WorkerInitializer> #{self.class.name}", :output => buffer)) unless buffer.nil?
+        @runner.io.send_message(Messages::Runner::InitializerMessage.new(:initializer => "<RunnerInitializer> #{self.class.name}", :output => buffer)) unless buffer.nil?
       end
     ensure
       r.close rescue nil
@@ -29,7 +32,7 @@ module Medusa
     end
 
     def log(string)
-      @worker.io.send_message(Messages::Worker::InitializerMessage.new(:initializer => "<WorkerInitializer> #{self.class.name}", :output => string))
+      @runner.io.send_message(Messages::Runner::InitializerMessage.new(:initializer => "<RunnerInitializer> #{self.class.name}", :output => string))
     end
 
     def run_initializer

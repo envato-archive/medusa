@@ -27,7 +27,11 @@ module Medusa
           STDOUT.reopen(REDIRECTION_FILE)
           STDERR.reopen(REDIRECTION_FILE)
 
-          RSpec::Core::Runner.run(["-fRSpec::Core::Formatters::MedusaFormatter", file.to_s], err, medusa_output)
+          begin
+            RSpec::Core::Runner.run(["-fRSpec::Core::Formatters::MedusaFormatter", file.to_s], err, medusa_output)
+          rescue Object => ex
+            conduit.write(Messages::Runner::Results.fatal_error(file, ex))
+          end
         end
 
         conduit.identify_as_parent

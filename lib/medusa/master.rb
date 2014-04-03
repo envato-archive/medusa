@@ -80,7 +80,7 @@ module Medusa #:nodoc:
       @autosort = opts.fetch('autosort') { true }
       @sync = opts.fetch('sync') { nil }
       @environment = opts.fetch('environment') { 'test' }
-      @project_root = opts.fetch('root') { `pwd`.chomp }
+      @project_root = Pathname.new(opts.fetch('root') { `pwd`.chomp })
 
       @options = opts.fetch('options') { '' }
 
@@ -206,8 +206,8 @@ module Medusa #:nodoc:
       @event_listeners.each { |l| l.initializer_result(command, worker) }
     end
 
-    def initializer_output(worker, initializer, line)
-      @event_listeners.each { |l| l.initializer_output(line, initializer, worker) }
+    def initializer_output(worker, message)
+      @event_listeners.each { |l| l.initializer_output(message, worker) }
     end
 
     def initializer_failure(worker, initializer, result)
@@ -244,7 +244,7 @@ module Medusa #:nodoc:
     def boot_local_worker(worker)
       runners = worker.fetch('runners') { raise "You must specify the number of runners" }
 
-      connection = LocalConnection.new(runners)
+      connection = LocalConnection.new(runners, project_root)
 
       @initializers.each do |initializer|
         result = initializer.run(connection, self, { :id => connection.worker_id })

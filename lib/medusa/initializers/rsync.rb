@@ -2,10 +2,10 @@ module Medusa
   module Initializers
     class RSync < Abstract
       def run(connection, master, worker)
-        result = Result.new("mkdir -p #{File.dirname(connection.work_path)}")
+        result = Result.new("mkdir -p #{connection.work_path.dirname}")
 
         status = connection.exec(result.command) do |output|
-          master.initializer_output(worker, self, output)
+          log(master, worker, output)
           result << output
         end
 
@@ -13,10 +13,10 @@ module Medusa
 
         return result unless result.ok?
 
-        result = Result.new("rsync -avz --delete #{master.project_root}/* #{connection.target}")
+        result = Result.new("rsync -avz --delete --exclude .git #{master.project_root}/ #{connection.target}")
 
         status = connection.exec(result.command) do |output|
-          master.initializer_output(worker, self, output)
+          log(master, worker, output)
           result << output
         end
 

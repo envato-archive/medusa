@@ -5,7 +5,7 @@ module Medusa
         result = Result.new("cd #{connection.work_path} && bundle --path #{connection.work_path.join(".bundle")}")
 
         status = connection.exec(result.command) do |output|
-          master.initializer_output(worker, self, output)
+          log(master, worker, output)
           result << output
         end
 
