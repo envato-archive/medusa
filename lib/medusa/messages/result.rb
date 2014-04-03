@@ -9,7 +9,7 @@ module Medusa #:nodoc:
 
       include WorkerPassthrough
 
-      def handle_by_master(master) #:nodoc:
+      def handle_by_master(master, worker)
         master.process_results(self)
       end
     end

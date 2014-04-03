@@ -6,7 +6,7 @@ module Medusa #:nodoc:
 
       def handle_by_worker(worker, runner)
         runner.ready = true
-        worker.send_to_master(self)
+        worker.send_message_to_master(self)
       end
 
       def handle_by_master(master, worker) #:nodoc:

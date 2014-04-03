@@ -143,9 +143,9 @@ module Medusa #:nodoc:
       @testing_begun ||= true
 
       if file = @files.shift
-        worker[:io].write(RunFile.new(:file => file))
+        worker[:io].write(Messages::RunFile.new(:file => file))
       else
-        worker[:io].write(NoMoreWork.new)
+        worker[:io].write(Messages::NoMoreWork.new)
       end
     end
 
@@ -191,7 +191,7 @@ module Medusa #:nodoc:
       notify! :file_summary, message
     end
 
-    def file_complete(message, _worker)
+    def file_complete(message)
       @incomplete_files.delete_at(@incomplete_files.index(message.file))
       trace "#{@incomplete_files.size} Files Remaining"
 
@@ -218,6 +218,10 @@ module Medusa #:nodoc:
       worker[:io].close
       @workers.delete(worker)      
     end
+
+    def notify!(event, *args)
+      @event_listeners.each { |l| l.send(event, *args) if l.respond_to?(event) }
+    end    
 
     # A text report of the time it took to run each file
     attr_reader :report_text
@@ -283,13 +287,13 @@ module Medusa #:nodoc:
     def shutdown_all_workers
       trace "Shutting down all workers"
       @workers.each do |worker|
-        worker[:io].write(Shutdown.new) if worker[:io]
+        worker[:io].write(Messages::Shutdown.new) if worker[:io]
       end
     end
 
     def handle_message(message, stream)
       worker = @workers.detect { |hash| hash[:io] == stream }
-      message.handle(self, worker)
+      message.handle_by_master(self, worker)
     end
 
     def run!
@@ -321,8 +325,5 @@ module Medusa #:nodoc:
       @heuristic_file ||= File.join(Dir.consistent_tmpdir, 'medusa_heuristics.yml')
     end
 
-    def notify!(event, *args)
-      @event_listeners.each { |l| l.send(event, *args) if l.respond_to?(event) }
-    end
   end
 end

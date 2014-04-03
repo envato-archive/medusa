@@ -34,7 +34,7 @@ module Medusa #:nodoc:
 
       @messages.on_stream_lost do |stream, remaining|
         if stream == @io
-          shutdown
+          terminate!
         elsif remaining == 1 # only the master remains
           trace "Stopping - only master remains"
           @io.send_message Messages::Died.new
@@ -48,7 +48,6 @@ module Medusa #:nodoc:
       @messages << @io
 
       begin
-        Worker.setups.each { |proc| proc.call }
         if File.exist?("medusa_worker_init.rb")
           eval(IO.read("medusa_worker_init.rb"))
         end
@@ -64,7 +63,7 @@ module Medusa #:nodoc:
       run!
     end
 
-    def send_to_master(message)
+    def send_message_to_master(message)
       @io.send_message(message)
     end
 

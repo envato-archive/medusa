@@ -67,10 +67,10 @@ module Medusa #:nodoc:
         ].flatten
       end
 
-      def result_received(file, result)
+      def result_received(result)
         if result.failure? || result.fatal?
           @errors = true
-          @error_collection << [result.description, result.exception, result.exception_backtrace]
+          @error_collection << [result.name, result.exception, result.exception_backtrace]
         end
 
         @tests_executed += 1

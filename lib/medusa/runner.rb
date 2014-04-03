@@ -42,14 +42,14 @@ module Medusa #:nodoc:
       begin
         runner_begin
       rescue StandardError, LoadError, SyntaxError => ex
-        @io.write(RunnerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
+        @io.write(Messages::RunnerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
         $0 = "[medusa] Runner failed."
         return
       end
 
       trace 'Booted.'
 
-      @io.write RequestFile.new
+      @io.write Messages::RequestFile.new
 
       begin
         process_messages
@@ -82,7 +82,7 @@ module Medusa #:nodoc:
     def run_file(file)
       trace "Running file: #{file}"
 
-      $0 = "[medusa] Running file #{file}"
+      $0 = "[medusa] File #{file}"
 
       begin
         if file =~ /_spec.rb$/i
@@ -95,13 +95,13 @@ module Medusa #:nodoc:
           run_test_unit_file(file)
         end
       rescue StandardError, LoadError => ex
-        @io.write Results.fatal_error(file, ex)
+        @io.write Messages::TestResult.fatal_error(file, ex)
       end
 
       $0 = "[medusa] Runner waiting...."
 
-      @io.write FileComplete.new(file: file)
-      @io.write RequestFile.new
+      @io.write Messages::FileComplete.new(file: file)
+      @io.write Messages::RequestFile.new
     end
 
     # Stop running
@@ -135,13 +135,13 @@ module Medusa #:nodoc:
       while @running
         begin
           message = @io.gets
-          if message and !message.class.to_s.index("Worker").nil?
+          if message
             trace "Received message from worker"
             trace "\t#{message.inspect}"
-            message.handle(self)
+            message.handle_by_runner(self)
           else
             trace "Ignored message #{message.class}"
-            @io.write Ping.new
+            @io.write Messages::Ping.new
           end
         rescue IOError => ex
           trace "Runner lost Worker"

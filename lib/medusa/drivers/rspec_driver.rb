@@ -8,41 +8,48 @@ module Medusa
       end
 
       def execute(file)
-        conduit = Pipe.new
+        parent, child = PipeTransport.pair
 
         pid = fork do
-          conduit.identify_as_child
-
           require 'rspec'
           require 'medusa/spec/medusa_formatter'
+
+          $0 = "[medusa] RspecDriver Running: #{file}"
 
           err = StringIO.new
 
           medusa_output = EventIO.new
+          message_stream = MessageStream.new(child)
 
           medusa_output.on_output do |message|
-            conduit.write message
+            message_stream.send_message message if message.is_a?(Message)
           end
-
-          STDOUT.reopen(REDIRECTION_FILE)
-          STDERR.reopen(REDIRECTION_FILE)
 
           begin
             RSpec::Core::Runner.run(["-fRSpec::Core::Formatters::MedusaFormatter", file.to_s], err, medusa_output)
           rescue Object => ex
-            conduit.write(Messages::Runner::Results.fatal_error(file, ex))
+            message_stream.write(Messages::TestResult.fatal_error(file, ex))
+          ensure
+            message_stream.close
           end
         end
 
-        conduit.identify_as_parent
+        $0 = "[medusa] RspecDriver Listening: #{file}"
+
+        parent_stream = MessageStream.new(parent)
 
         while Process.wait(pid, Process::WNOHANG).nil?
-          message = conduit.gets
-          message_bus.write message if message
+          begin
+            Timeout.timeout(0.1) do
+              message = parent_stream.wait_for_message
+              message_bus.write message if message.is_a?(Message)
+            end
+          rescue Timeout::Error
+          end
         end
 
       ensure
-        conduit.close
+        parent_stream.close rescue nil
       end
 
     end

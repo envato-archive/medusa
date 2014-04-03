@@ -16,13 +16,13 @@ module Medusa #:nodoc:
         @report[file]['failure'] ||= 0
       end
 
-      def result_received(file, result)
-        file_begin(file) # initialize just in case.
+      def result_received(result)
+        file_begin(result.file) # initialize just in case.
 
         if result.failure? || result.fatal?
-          @report[file]['failure'] += 1
+          @report[result.file]['failure'] += 1
         else
-          @report[file]['success'] += 1
+          @report[result.file]['success'] += 1
         end
       end
 

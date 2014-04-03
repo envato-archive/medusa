@@ -6,7 +6,7 @@ module Medusa #:nodoc:
 
       include WorkerPassthrough
 
-      def handle_by_master(master)
+      def handle_by_master(master, worker)
         master.notify! :example_group_finished, group_name
       end
 

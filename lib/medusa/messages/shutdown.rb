@@ -9,7 +9,7 @@ module Medusa
       end
 
       def handle_by_runner(runner)
-        runner.shutdown
+        runner.stop
       end
     end
   end

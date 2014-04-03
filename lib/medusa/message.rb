@@ -18,8 +18,8 @@ module Medusa #:nodoc:
 
     # Include in a message when its raised from a runner and needs to get to the master.
     module WorkerPassthrough
-      def handle_by_worker(worker)
-        worker.send_to_master(self)
+      def handle_by_worker(worker, runner)
+        worker.send_message_to_master(self)
       end
     end
 
@@ -47,16 +47,11 @@ module Medusa #:nodoc:
     # This is really just a string representation of a hash
     # with no newlines. It adds in the class automatically
     def serialize
-      data = Hash.new
-      self.class.message_attrs.each do |attr|
-        data[attr] = send(attr)
-      end
-
-      data.merge({:class => self.class}).inspect
+      to_hash.inspect
     end
 
     def self.message_attrs
-      @message_attrs
+      @message_attrs ||= []
     end
 
     def self.message_attr(name)
@@ -64,6 +59,20 @@ module Medusa #:nodoc:
       @message_attrs << name
 
       attr_accessor name
+    end
+
+    def to_hash
+      data = Hash.new
+      self.class.message_attrs.each do |attr|
+        data[attr] = send(attr)
+      end
+
+      data.merge({:class => self.class})
+    end
+
+    def to_s
+      data = to_hash.collect { |x,y| "#{x}: #{y}" }.join(", ")
+      "<#{self.class.name} #{data}>"
     end
   end
 end

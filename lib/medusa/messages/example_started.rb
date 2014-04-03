@@ -7,7 +7,7 @@ module Medusa #:nodoc:
 
       include WorkerPassthrough
 
-      def handle_by_master(master)
+      def handle_by_master(master, worker)
         master.notify! :example_started, example_name
       end
     end

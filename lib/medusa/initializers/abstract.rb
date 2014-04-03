@@ -6,7 +6,7 @@ module Medusa
       end
 
       def log(master, worker, string)
-        master.initializer_output(worker, Messages::Worker::InitializerMessage.new(:initializer => self.class.name, :output => string))
+        master.initializer_output(worker, Messages::InitializerMessage.new(:initializer => self.class.name, :output => string))
       end
 
     end

@@ -2,10 +2,11 @@ module Medusa #:nodoc:
   module Messages #:nodoc:
 
     class InitializerMessage < Medusa::Message
+      message_attr :initializer
       message_attr :output
 
-      def handle(master, worker)
-        master.notify! :initializer_output, worker, output
+      def handle_by_master(master, worker)
+        master.notify! :initializer_output, self, worker
       end
     end
 
