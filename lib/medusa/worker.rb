@@ -7,19 +7,9 @@ module Medusa #:nodoc:
   # The general convention is to have one Worker per machine on a distributed
   # network.
   class Worker
-    include Medusa::Messages::Worker
     traceable('WORKER')
 
     attr_reader :runners, :verbose, :runner_log_file, :io, :worker_id
-
-    def self.setup(&block)
-      @setup ||= []
-      @setup << block
-    end
-
-    def self.setups
-      @setup || []
-    end
 
     # Create a new worker.
     # * io: The IO object to use to communicate with the master
@@ -33,15 +23,12 @@ module Medusa #:nodoc:
       @verbose = opts.fetch(:verbose) { false }
       @io = opts.fetch(:io) { raise "No IO Object" }
       @runners = []
-      @listeners = []
-      @options = opts.fetch(:options) { "" }
 
       $0 = "[medusa] Worker"
 
       @messages = MessageStreamMultiplexer.new
 
       @messages.on_message do |message, stream|
-        puts "Worker got msg: #{message.inspect}"
         handle_message(message, stream)
       end
 
@@ -50,13 +37,13 @@ module Medusa #:nodoc:
           shutdown
         elsif remaining == 1 # only the master remains
           trace "Stopping - only master remains"
-          @io.send_message Medusa::Messages::Worker::Died.new
+          @io.send_message Messages::Died.new
           @messages.stop!
         end
       end
 
-      # Let master know we've started up.
-      @io.send_message(Medusa::Messages::Worker::Ping.new)
+      # Let master know we've started up (and establish connection).
+      @io.send_message(Messages::Ping.new)
 
       @messages << @io
 
@@ -66,99 +53,47 @@ module Medusa #:nodoc:
           eval(IO.read("medusa_worker_init.rb"))
         end
 
-        @runner_event_listeners = Array(opts.fetch(:runner_listeners) { nil })
-        @runner_event_listeners.select{|l| l.is_a? String}.each do |l|
-          @runner_event_listeners.delete_at(@runner_event_listeners.index(l))
-          listener = eval(l)
-          @runner_event_listeners << listener if listener.is_a?(Medusa::RunnerListener::Abstract)
-        end
-        @runner_log_file = opts.fetch(:runner_log_file) { nil }
-
         boot_runners(opts.fetch(:runners) { 1 })
 
-        trace "Firing worker begin"
-        @io.send_message(Medusa::Messages::Worker::WorkerBegin.new)
+        @io.send_message(Messages::WorkerBegin.new)
       rescue => ex
-        @io.send_message(Medusa::Messages::Worker::WorkerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
+        @io.send_message(Messages::WorkerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
         return
       end
 
       run!
     end
 
-    # message handling methods
-
-    # When a runner wants a file, it hits this method with a message.
-    # Then the worker bubbles the file request up to the master.
-    def request_file(message, runner)
-      @io.send_message(RequestFile.new)
-      runner[:idle] = true
+    def send_to_master(message)
+      @io.send_message(message)
     end
 
-    def example_group_started(message, runner)
-      @io.send_message(ExampleGroupStarted.new(eval(message.serialize)))
-    end
-
-    def example_group_finished(message, runner)
-      @io.send_message(ExampleGroupFinished.new(eval(message.serialize)))
-    end
-
-    def example_started(message, runner)
-      @io.send_message(ExampleStarted.new(eval(message.serialize)))
-    end
-
-    def example_group_summary(message, runner)
-      @io.send_message(ExampleGroupSummary.new(eval(message.serialize)))
-    end
-
-    def file_complete(message, runner)
-      runner[:idle] = true
-      trace "INF #{message.file.inspect}"
-      @io.send_message(FileComplete.new(file: message.file))
-    end
-
-    # When the master sends a file down to the worker, it hits this
-    # method. Then the worker delegates the file down to a runner.
-    def delegate_file(message)
+    def allocate_free_runner
       runner = idle_runner
-      runner[:idle] = false
-      runner[:io].send_message(RunFile.new(eval(message.serialize)))
+      runner.free = false
+      runner
     end
 
-    # When a runner finishes, it sends the results up to the worker. Then the
-    # worker sends the results up to the master.
-    def relay_results(message, runner)
-      trace "Relaying results to Master #{@io}: #{message.inspect}"
-      @io.send_message(Results.new(eval(message.serialize)))
-    end
-
-    def runner_startup_failure(message, runner)
+    def remove_runner(runner)
       @runners.delete(runner)
+    end
 
-      @io.send_message(RunnerStartupFailure.new(log: message.log))
-
+    def check_runners_ready
       if @runners.length == 0
-        @io.send_message(WorkerStartupFailure.new(log: "All runners failed to start"))
+        @io.send_message(Messages::WorkerStartupFailure.new(log: "All runners failed to start"))
+      end    
+    end
+
+    def shutdown_idle_runners
+      @runners.select(&:free?).each do |r|
+        r.send_message(Messages::Shutdown.new)
       end
     end
 
-    # When the master indicates there's no more work, idle runners
-    # are shutdown.
-    def shutdown_idle
-      @runners.select { |r| r[:idle] }.each do |r|
-        trace "Sending Shutdown to Idle Runner"
-        r[:io].send_message(Shutdown.new)
-      end
-    end
-
-    # When a master issues a shutdown order, it hits this method, which causes
-    # the worker to send shutdown messages to its runners.
-    def shutdown
+    def terminate!
       @running = false
-      trace "Notifying #{@runners.size} Runners of Shutdown"
       @runners.each do |r|
-        trace "Sending Shutdown to Runner"
-        r[:io].send_message(Shutdown.new)
+        r.send_message(Messages::Shutdown.new)
       end
     end
 
@@ -167,29 +102,11 @@ module Medusa #:nodoc:
     def boot_runners(num_runners) #:nodoc:
       trace "Booting #{num_runners} Runners"
       num_runners.times do |runner_id|
+        runner = RunnerClient.new(runner_id)
+        runner.boot!
 
-        transport = TcpTransport.new("localhost", 19100 + runner_id)
-        port = transport.port
-        trace "Worker communicating on port #{port}"
-        # parent_transport, child_transport = PipeTransport.pair
-
-        child = fork do
-          # parent_transport.close
-          # child_stream = MessageStream.new(child_transport)
-          child_stream = MessageStream.new(TcpTransport.new("localhost", port))
-          Medusa::Runner.new(:id => runner_id, :io => child_stream, :verbose => @verbose, :runner_log_file => @runner_log_file, :options => @options)
-        end
-
-        trace "Runner PID: #{child}"
-        
-        # child_transport.close
-        # parent_stream = MessageStream.new(parent_transport)
-        transport.server!
-        parent_stream = MessageStream.new(transport)
-
-        @messages << parent_stream
-
-        @runners << { :id => runner_id, :pid => child, :io => parent_stream, :idle => false }
+        @messages << runner.message_stream
+        @runners << runner
       end
       trace "#{@runners.size} Runners booted"
     rescue => ex
@@ -212,12 +129,13 @@ module Medusa #:nodoc:
     end
 
     def handle_message(message, from)
-      trace "Handle message #{message}"
-      if from == @io && !message.class.to_s.index("Master").nil?
-        message.handle(self)
-      elsif !message.class.to_s.index("Runner").nil?
-        runner = @runners.detect { |r| r[:io] == from }
-        message.handle(self, runner)
+      if message.respond_to?(:handle_by_worker)
+        if from == @io
+          message.handle_by_worker(self)
+        else
+          runner = @runners.detect { |r| r.message_stream == from }
+          message.handle_by_worker(self, runner)
+        end
       end
     end
 
@@ -225,7 +143,7 @@ module Medusa #:nodoc:
     def idle_runner #:nodoc:
       idle_r = nil
       while idle_r.nil?
-        idle_r = @runners.detect{|runner| runner[:idle]}
+        idle_r = @runners.detect(&:free?)
       end
       return idle_r
     end

@@ -22,25 +22,22 @@ module RSpec
         def example_passed(example)
           super(example)
 
-          results = example_to_json(example)
           file_path = example_group_file_path(example.example_group)
-          output.puts Medusa::Messages::Runner::Results.new(output: results, file: file_path)
+          output.puts example_to_result(example, file_path)
         end
 
         def example_pending(example)
           super(example)
 
-          results = example_to_json(example)
           file_path = example_group_file_path(example.example_group)
-          output.puts Medusa::Messages::Runner::Results.new(output: results, file: file_path)
+          output.puts example_to_result(example, file_path)
         end
 
         def example_failed(example)
           super(example)
 
-          results = example_to_json(example)
           file_path = example_group_file_path(example.example_group)
-          output.puts Medusa::Messages::Runner::Results.new(output: results, file: file_path)
+          output.puts example_to_result(example, file_path)
         end
 
         def dump_summary(duration, example_count, failure_count, pending_count)
@@ -60,22 +57,18 @@ module RSpec
           example_group.file_path.gsub(/\.\//, '') rescue "<file not available>"
         end
 
-        def example_to_json(example)
-          data = {
-            :description => example.description,
-            :duration => example.execution_result[:run_time],
-            :status => example.execution_result[:status].to_sym,
-            :run_time => example.execution_result[:run_time]
-          }
+        def example_to_result(example, file)
+          Medusa::Messages::Runner::TestResult.new.tap do |r|
+            r.description = example.description
+            r.duration = example.execution_result[:run_time]
+            r.status = example.execution_result[:status].to_sym
+            r.driver = Drivers::RSpecDriver.name
+            r.file = file
 
-          if example.exception
-            data.merge!(
-              :exception => example.exception.message,
-              :exception_backtrace => example.exception.backtrace
-            )
+            if example.exception
+              r.exception = example.exception
+            end
           end
-
-          data.to_json
         end
       end
     end
