@@ -11,10 +11,13 @@ if defined?(::Rake::TeamCity::RunnerCommon)
         include ::Rake::TeamCity::RunnerCommon
 
         def notify_example_group_started(file, group_name)
+          logger.debug(::Rake::TeamCity::MessageFactory.create_suite_started(group_name, file))
+          require 'pry'; binding.pry
           send_msg(::Rake::TeamCity::MessageFactory.create_suite_started(group_name, file))
         end
 
         def notify_example_group_finished(file, group_name)
+          logger.debug(::Rake::TeamCity::MessageFactory.create_suite_finished(group_name))
           send_msg(::Rake::TeamCity::MessageFactory.create_suite_finished(group_name))
         end
 
@@ -23,6 +26,7 @@ if defined?(::Rake::TeamCity::RunnerCommon)
         end
 
         def notify_example_started(file, example_name)
+          logger.debug(::Rake::TeamCity::MessageFactory.create_test_started(example_name, file))
           send_msg(::Rake::TeamCity::MessageFactory.create_test_started(example_name, file))
         end
 
@@ -34,16 +38,23 @@ if defined?(::Rake::TeamCity::RunnerCommon)
           end
 
           duration = result.duration || 0 # sometimes rspec doesn't set a duration in its results
+          logger.debug(::Rake::TeamCity::MessageFactory.create_test_finished(result.description, duration, nil))
           send_msg(::Rake::TeamCity::MessageFactory.create_test_finished(result.description, duration, nil))
         end
 
         private
 
+        def logger
+          @logger ||= Logger.new('team_city.log')
+        end
+
         def notify_failure(file, result)
+          logger.debug(::Rake::TeamCity::MessageFactory.create_test_failed(result.description, result.exception, result.exception_backtrace.join("\n")))
           send_msg(::Rake::TeamCity::MessageFactory.create_test_failed(result.description, result.exception, result.exception_backtrace.join("\n")))
         end
 
         def notify_pending(file, result)
+          logger.debug(::Rake::TeamCity::MessageFactory.create_test_ignored(result.description, ''))
           send_msg(::Rake::TeamCity::MessageFactory.create_test_ignored(result.description, ''))
         end
       end
