@@ -12,7 +12,6 @@ if defined?(::Rake::TeamCity::RunnerCommon)
 
         def notify_example_group_started(file, group_name)
           logger.debug(::Rake::TeamCity::MessageFactory.create_suite_started(group_name, file))
-          require 'pry'; binding.pry
           send_msg(::Rake::TeamCity::MessageFactory.create_suite_started(group_name, file))
         end
 
