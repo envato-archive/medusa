@@ -85,14 +85,22 @@ module Medusa #:nodoc:
 
     def shutdown_idle_runners
       @runners.select(&:free?).each do |r|
-        r.send_message(Messages::Shutdown.new)
+        begin
+          r.send_message(Messages::Shutdown.new)
+        rescue IOError 
+          # May have already shut down.          
+        end
       end
     end
 
     def terminate!
       @running = false
       @runners.each do |r|
-        r.send_message(Messages::Shutdown.new)
+        begin
+          r.send_message(Messages::Shutdown.new)
+        rescue IOError 
+          # May have already shut down.          
+        end
       end
     end
 
