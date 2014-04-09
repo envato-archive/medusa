@@ -57,7 +57,7 @@ module Medusa
     end
 
     def message_stream
-      @message_stream ||= begin
+      @message_stream ||= Timeout.timeout(5) do
         transport = TcpTransport.new("localhost", @port)
         transport.server!
         MessageStream.new(transport)
