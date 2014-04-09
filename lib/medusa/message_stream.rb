@@ -35,6 +35,8 @@ module Medusa
       raise IOError unless @transport
       raise UnprocessableMessage unless message.is_a?(Message)
 
+      puts "[MESSAGE] Sending #{message.inspect}"
+
       @transport.write(message.serialize)
     end
 

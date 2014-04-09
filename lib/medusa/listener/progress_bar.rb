@@ -20,8 +20,12 @@ module Medusa #:nodoc:
         @fatals = 0
 
         Curses.noecho
-        Curses.init_screen        
+        Curses.init_screen
+        Curses.setpos(0,0)
+        Curses.addstr("Medusa")
+        Curses.refresh
       end
+
 
       # Store the total number of files
       def testing_begin(files)
@@ -70,19 +74,19 @@ module Medusa #:nodoc:
       def result_received(result)
         if result.failure? || result.fatal?
           @errors = true
-          @error_collection << [result.name, result.exception, result.exception_backtrace]
+          @error_collection << [result.name, result.exception_class, result.exception_message, result.exception_backtrace]
         end
 
         @tests_executed += 1
         @fatals += 1 if result.fatal?
-        render_progress_bar
+        render
       end
 
       # Increment completed files count and update bar
       def file_end(file)
         @files_completed += 1
         @files.delete(file)
-        render_progress_bar
+        render
       end
 
       # Break the line
@@ -90,7 +94,7 @@ module Medusa #:nodoc:
         Curses.close_screen
 
         if @mode == :test
-          render_progress_bar
+          render_summary
           render_time
         end
 
@@ -100,20 +104,21 @@ module Medusa #:nodoc:
       private
 
       def render
-        if @mode == :setup
-          # Curses.clear
+        Curses.clear
 
-          @workers.each_with_index do |(worker, message), index|
-            # Curses.setpos(index, 0)
-            # Curses.addstr("Worker #{index}: #{message}")
-            @output.write("Worker #{index}: #{message}\r")
-          end
+        Curses.setpos(0,0)
+        Curses.addstr("Medusa")
 
-          # Curses.refresh
-        else
-          @output.write "\n\n"
+        @workers.each_with_index do |(worker, message), index|
+          Curses.setpos(index + 2, 0)
+          Curses.addstr("Worker #{index}: #{message}")
+        end
+
+        if @mode == :test
           render_progress_bar
         end
+
+        Curses.refresh
       end
 
       def render_time
@@ -122,10 +127,11 @@ module Medusa #:nodoc:
       end
 
       def render_errors
-        @error_collection.each do |(name, exception, backtrace)|
+        @error_collection.each do |(name, exception, message, backtrace)|
           @output.write "#{name}\n"
+          @output.write "#{message}\n"
           @output.write "#{exception}\n"
-          @output.write "#{backtrace}\n"
+          @output.write "#{backtrace.join("\n")}\n"
           @output.write "\n\n"
         end
 
@@ -150,18 +156,27 @@ module Medusa #:nodoc:
         @output.flush
       end
 
+      def render_summary
+        @output.write "\n"
+        @output.write "Completed #{@files_completed}/#{@total_files} - #{@tests_executed} completed, #{@error_collection.length} failures, #{@fatals} fatals.\n"
+        @output.write "#{@workers.length} workers.\n"
+      end
+
       def render_progress_bar
         width = 30
+        Curses.setpos(@workers.length + 4, 5)
         complete = ((@files_completed.to_f / @total_files.to_f) * width).to_i
-        @output.write "\r" # move to beginning
-        @output.write 'Medusa Testing ['
-        @output.write @errors ? "\033[0;31m" : "\033[0;32m"
-        complete.times{@output.write '#'}
-        @output.write '>'
-        (width-complete).times{@output.write ' '}
-        @output.write "\033[0m"
-        @output.write "] #{@files_completed}/#{@total_files} - #{@tests_executed} completed, #{@error_collection.length} failures, #{@fatals} fatals."
-        @output.flush
+        Curses.addstr 'Medusa Testing ['
+        Curses.addstr @errors ? "\033[0;31m" : "\033[0;32m"
+        complete.times{Curses.addstr '#'}
+        Curses.addstr '>'
+        (width-complete).times{Curses.addstr ' '}
+        Curses.addstr "\033[0m"
+        Curses.addstr "] #{@files_completed}/#{@total_files} - #{@tests_executed} completed, #{@error_collection.length} failures, #{@fatals} fatals."
+
+      rescue
+        Curses.addstr("ERROR")
+        Curses.refresh
       end
     end
   end

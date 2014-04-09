@@ -67,6 +67,7 @@ module RSpec
 
             if example.exception
               r.exception = example.exception
+              r.exception_backtrace.delete_if { |line| line =~ /gems\/rspec/ }
             end
           end
         end
