@@ -11,11 +11,11 @@ Goals
 Phase 1 
 - Clean up inner workings to provide streaming feedback and centralised result format from the master.
 - Tidy the tests to the point that they run without any additional configuration.
-- Worker or Runner errors propogate to master.
+- Worker or Runner errors propogate to master. [done]
  
 Phase 2
 - Separate changes made to work with rails into an easy-to-use setup/generator (bundle local, requiring environment, etc)
-- Running medusa on a new project should be as easy as running rspec.
+- Running medusa on a new project should be as easy as running rspec. [done]
 - Runner artifact propogation to master.
   - Capture log file output for each runner.
   - Capture process statistics for the spec's run.
@@ -40,3 +40,108 @@ Usage (planned)
 3. Edit the `medusa/environment.rb` file to configure environment setup (databases, etc).
 4. Edit the `medusa/config.yml` file to configure how to run specs (machines to use, etc).
 5. Run `bundle exec medusa` to run a build.
+
+
+Message Flow
+============
+
+Medusa operates around messaging, which is performed over TCP connections. Remote workers via SSH have their ports forwarded onto the local master for communication, and local workers also use TCP connections.
+
+There are 3 phases of message passing: Initialization, Run, and Shutdown.
+
+Initialization
+
+This phase is started once the master begins setting up workers for execution. The initialization phase covers both pre and post `medusa worker` commands, such as `bundle install`, or reconnecting to a new activerecord database.
+
+Pre initialization messages are not passed from the worker, instead are passed directly from the master's Initialization classes to the Listeners.
+
+Post initialization messages ARE passed from the worker. See `Medusa::Initializers::Rails` for an example.
+
+```
+Master                          Worker
+
+(connects to target)
+
+(run initializer)
+  initializer_start
+
+  initializer_output
+
+  initializer_result
+
+  initializer_end
+
+(starts medusa worker)
+
+(wait for ping)
+
+                          <-    Ping
+
+                          <-    InitializerStart
+                          <-    InitializerOutput
+                          <-    InitializerResult
+                          <-    InitializerEnd
+
+                          <-    InitializerStart
+                          <-    InitializerOutput
+                          <-    InitializerResult
+                          <-    InitializerEnd
+
+                          <-    WorkerBegin
+
+                                or
+
+                          <-    WorkerStartupFailure
+```
+
+Run
+
+Once the worker has been successfully initialized, the Runners are started up and start to request files once they're initialized. Runner initialization follows a similar flow to the Worker initialization, but there is no pre step as Runners are forked from the Worker process.
+
+
+```
+
+Master                          Worker                          Runner
+                                                          <-    RequestFile
+                          <-    RequestFile
+
+RunFile ->
+                                RunFile ->
+                                                                RunFile
+
+                                                          <-    Result
+                          <-    Result
+                                                          <-    Result
+                          <-    Result
+                                                          <-    Result
+                          <-    Result
+                                                          <-    Result
+                          <-    Result
+                                                          <-    FileComplete
+                          <-    FileComplete
+                                                          <-    RequestFile
+                          <-    RequestFile
+RunFile ->
+                          ...
+or
+
+NoMoreWork ->
+                                Shutdown ->
+
+                                (closes idle runner connections)
+
+                                                                (continues running if active)
+
+                                                          <-    Result
+                          <-    Result
+                                                          <-    FileComplete
+                          <-    FileComplete
+                                                          <-    RequestFile
+                          <-    RequestFile
+
+(repeats until all workers dead)
+
+                                (repeats until all runners dead)
+
+                          <-    Died                                
+```

@@ -7,10 +7,11 @@ module Medusa #:nodoc:
   # The general convention is to have one Runner for each logical processor
   # of a machine.
   class Runner
-    include Medusa::Messages::Runner
     traceable('RUNNER')
 
     DEFAULT_LOG_FILE = 'medusa-runner.log'
+
+    attr_reader :io, :runner_id
 
     def self.setup(&block)
       @setup ||= []
@@ -40,14 +41,15 @@ module Medusa #:nodoc:
 
       begin
         runner_begin
-      rescue => ex
-        @io.write(RunnerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
+      rescue StandardError, LoadError, SyntaxError => ex
+        @io.write(Messages::RunnerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
+        $0 = "[medusa] Runner failed."
         return
       end
 
       trace 'Booted.'
 
-      @io.write RequestFile.new
+      @io.write Messages::RequestFile.new
 
       begin
         process_messages
@@ -71,14 +73,16 @@ module Medusa #:nodoc:
       @event_listeners.each {|l| l.runner_begin( self ) }
 
       trace "Running environment setup"
-      Runner.setups.each { |proc| proc.call(@runner_id) }
+      if File.exist?("medusa_runner_init.rb")
+        eval(IO.read("medusa_runner_init.rb"))
+      end
     end
 
     # Run a test file and report the results
     def run_file(file)
       trace "Running file: #{file}"
 
-      $0 = "[medusa] Running file #{file}"
+      $0 = "[medusa] File #{file}"
 
       begin
         if file =~ /_spec.rb$/i
@@ -91,19 +95,26 @@ module Medusa #:nodoc:
           run_test_unit_file(file)
         end
       rescue StandardError, LoadError => ex
-        @io.write Results.fatal_error(file, ex)
+        @io.write Messages::TestResult.fatal_error(file, ex)
       end
 
       $0 = "[medusa] Runner waiting...."
 
-      @io.write FileComplete.new(file: file)
-      @io.write RequestFile.new
+      @io.write Messages::FileComplete.new(file: file)
+      @io.write Messages::RequestFile.new
     end
 
     # Stop running
     def stop
-      runner_end if @runner_began
-      @runner_began = @running = false
+      if @runner_began
+        @runner_began = false
+        runner_end
+      end
+
+      @running = false
+      @io.close
+
+      exit
     end
 
     def runner_end
@@ -124,13 +135,13 @@ module Medusa #:nodoc:
       while @running
         begin
           message = @io.gets
-          if message and !message.class.to_s.index("Worker").nil?
+          if message
             trace "Received message from worker"
             trace "\t#{message.inspect}"
-            message.handle(self)
+            message.handle_by_runner(self)
           else
             trace "Ignored message #{message.class}"
-            @io.write Ping.new
+            @io.write Messages::Ping.new
           end
         rescue IOError => ex
           trace "Runner lost Worker"
@@ -172,7 +183,7 @@ module Medusa #:nodoc:
       return output.join("\n")
     end
 
-    # run all the Specs in an RSpec file (NOT IMPLEMENTED)
+    # run all the Specs in an RSpec file
     def run_rspec_file(file)
       Drivers::RspecDriver.new(@io).execute(file)
     end

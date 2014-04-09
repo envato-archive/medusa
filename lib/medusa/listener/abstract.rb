@@ -11,6 +11,19 @@ module Medusa #:nodoc:
         @output = output
       end
 
+      def initializer_start(command, worker)
+      end
+
+      def initializer_result(command, worker)
+      end
+
+      def initializer_failure(worker, initializer, result)
+      end
+
+      def initializer_output(message, worker)
+      end
+
+
       # Fired when testing has started
       def testing_begin(files)
       end

@@ -27,6 +27,9 @@ module Medusa #:nodoc:
           # successfully
           $stderr = $stdout =  File.open("some-log.log", 'a')
         end
+
+        $stderr.sync = true
+        $stdout.sync = true
       end
 
     end

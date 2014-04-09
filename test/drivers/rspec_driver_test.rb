@@ -78,7 +78,7 @@ class RSpecDriverTest < Test::Unit::TestCase
       driver = Medusa::Drivers::RspecDriver.new(stream)
       driver.execute(stdout_test_file)
 
-      assert stream.result_messages.length == 1, "Should only be 1 message, but there was #{stream.result_messages.length}"
+      assert stream.result_messages.length == 2, "Should only be 2 message, but there was #{stream.result_messages.length}"
     end
 
   end
