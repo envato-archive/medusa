@@ -6,8 +6,8 @@ describe "Some Situation" do
     expect(1).to eql 1
   end
 
-  # it "should write to stdout" do
-  #   puts "Whatever"
-  #   expect(1).to eql 1
-  # end
+  it "should write to stdout" do
+    `echo Blah Blah`
+    expect(1).to eql 1
+  end
 end
