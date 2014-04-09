@@ -17,7 +17,6 @@ module Medusa
       while true
         begin
           message = @transport.read
-          puts "got #{message.inspect}"
 
           return Message.build(eval(message.chomp)) unless message.to_s == ""
         rescue SyntaxError, NameError => ex
@@ -35,8 +34,6 @@ module Medusa
     def send_message(message)
       raise IOError unless @transport
       raise UnprocessableMessage unless message.is_a?(Message)
-
-      puts "sending #{message.serialize}"
 
       @transport.write(message.serialize)
     end
