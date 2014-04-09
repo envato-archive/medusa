@@ -25,10 +25,11 @@ module Medusa #:nodoc:
     # Boot up a runner. It takes an IO object (generally a pipe from its
     # parent) to send it messages on which files to execute.
     def initialize(opts = {})
-      redirect_output( opts.fetch( :runner_log_file ) { DEFAULT_LOG_FILE } )
+      @runner_id = opts.fetch(:id) { rand(1000) }
+
+      redirect_output("medusa-runner-#{@runner_id}.log")
       reg_trap_sighup
 
-      @runner_id = opts.fetch(:id) { rand(1000) }
       @io = opts.fetch(:io) { raise "No IO Object" }
       @verbose = opts.fetch(:verbose) { false }
       @event_listeners = Array( opts.fetch( :runner_listeners ) { nil } )
