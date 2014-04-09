@@ -34,12 +34,11 @@ module Medusa
     end
 
     def target
-      user = `who am i`.split(/\s+/).first
-      "/tmp/medusa/local-#{@project_root.basename}-#{@port}"
+      "localhost"
     end
 
     def work_path
-      Pathname.new(target)
+      Pathname.new(`pwd`.chomp).expand_path
     end
 
     def terminate!
