@@ -100,13 +100,22 @@ module Medusa #:nodoc:
 
     def boot_runners(num_runners) #:nodoc:
       trace "Booting #{num_runners} Runners"
+      runner_base_id = 0
       num_runners.times do |runner_id|
-        runner = RunnerClient.new(runner_id)
-        runner.boot!
+
+        runner = begin
+          r = RunnerClient.new(runner_base_id + runner_id)
+          r.boot!
+          r
+        rescue Errno::EADDRINUSE
+          runner_base_id += 1
+          retry
+        end
 
         @messages << runner.message_stream
         @runners << runner
       end
+      send_message_to_master(Messages::InitializerMessage.new(output: "#{num_runners} runners started"))
       trace "#{@runners.size} Runners booted"
     rescue => ex
       trace ex.class.name
