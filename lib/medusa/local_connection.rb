@@ -49,6 +49,10 @@ module Medusa
       @port
     end
 
+    def forwarded_port
+      @port
+    end
+
     def exec_and_detach(command)
       pid = Process.spawn(command)
       Process.detach(pid)

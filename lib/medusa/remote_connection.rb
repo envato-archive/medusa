@@ -3,9 +3,13 @@ module Medusa
   class RemoteConnection
     traceable('REMOTE')
 
+    attr_reader :worker_id, :runners
+    attr_accessor :medusa_pid
+
     def self.from_target(target)
       user = nil
       host = nil
+      runners = 1
 
       if target.include?("@")
         user = target.split("@").first
@@ -14,42 +18,66 @@ module Medusa
         host = target
       end
 
-      new(host, user)      
+      if host.include?("/")
+        runners = host.split("/").last.to_i
+        host = host.split("/").first
+      end
+
+      new(host, user, runners)      
     end
 
-    def initialize(host, username = nil)
+    def initialize(host, username, runners)
       
       require 'net/ssh'
 
       @host = host
-      @username = username
+      @username = username || current_user
       @port = TcpTransport.next_available_port
+      @runners = runners
 
       puts "Opening remote connection to #{host}"
       puts "  User: #{@username}"
       puts "  Comms Port: #{@port} (local) -> #{host}:#{@port + 200}"
 
-      transport = TcpTransport.new("localhost", @port)
-      transport.server!
+      # transport = TcpTransport.new("localhost", @port)
+      # transport.server!
 
-
-      @session = Net::SSH.start(@host, @username, :password => "pop632")
+      @session = Net::SSH.start(@host, @username)
       @session.forward.remote_to(@port, 'localhost', @port + 200)
 
       # Blocking accept
-      Thread.new { transport.read }
+      # Thread.new { transport.read }
 
-      @message_stream = MessageStream.new(transport)
+      # @message_stream = MessageStream.new(transport)
 
-      @looping_thread = Thread.new { loop { @session.loop { true }; sleep(0.1); } }
+      @worker_id = rand(1000000)
     end
 
     def exec(command, &output_handler)
-      @session.process.open(command) do |process|
-        process.on_stdout do |p, data|
-          output_handler.call(data) if output_handler
+      puts "EXEC #{command}"
+
+      @session.open_channel do |channel|
+        channel.exec(command) do |ch, success|
+          ch.on_close do |p|
+            puts "CLOSED"
+          end
+
+          ch.on_extended_data do |p,type,data|
+            puts data
+          end
+
+          ch.on_data do |p, data|
+            puts data
+            output_handler.call(data) if output_handler
+          end
+
+          return -1 unless success
         end
+
+        channel.wait
       end
+
+      return 0
     end
 
     def exec_and_detach(command, &output_handler)
@@ -69,11 +97,27 @@ module Medusa
 
         ch.exec command
       end
+
+      @looping_thread ||= Thread.new { loop { @session.loop { true }; sleep(0.1); } }
+
+      1
     end
 
     def forwarded_port
       @port + 200
     end
+
+    def port
+      @port
+    end
+
+    def target
+      [@username, @host].reject(&:empty?).join("@")
+    end
+
+    def work_path
+      Pathname.new("/tmp/medusa/#{current_user}-#{@port}").expand_path
+    end    
 
     def message_stream
       @message_stream ||= begin
@@ -84,9 +128,19 @@ module Medusa
     end
 
     def close
+      @looping_thread.kill if @looping_thread
       @session.close
       @message_stream.close if @message_stream
-      # @looping_thread.kill
+    end
+
+    def terminate!
+      close
+    end
+
+    private
+
+    def current_user
+      `who am I`.chomp.split(" ").first
     end
   end
 end

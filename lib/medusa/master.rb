@@ -272,17 +272,25 @@ module Medusa #:nodoc:
 
       connection = RemoteConnection.from_target(target)
 
-      # initializers.each do |initializer|
-      #   initializer.run(connection)
-      # end
+      @initializers.each do |initializer|
+        trace "Running initializer #{initializer.class.name} for worker #{connection.worker_id}"
 
-      pid = connection.exec_and_detach("cd /Users/sean/src/medusa && rvm ruby-1.9.3-p286 do medusa worker --connect-tcp localhost:#{connection.port} --runners #{runners}") do |out|
-        trace "From Worker: #{out}"
+        result = initializer.run(connection, self, { :id => connection.worker_id })
+        unless result.ok?
+          trace "Initializer failed."
+          connection.terminate!
+          initializer_failure(worker, initializer, result)
+          return
+        end
       end
+
+      trace "Initializers done, connecting to message stream..."
 
       @messages << connection.message_stream
 
-      @workers << { :io => connection.message_stream, :idle => false, :type => :local }
+      trace "Ready."
+
+      @workers << { :id => connection.worker_id, :io => connection.message_stream, :idle => false, :type => :ssh }
     end
 
 

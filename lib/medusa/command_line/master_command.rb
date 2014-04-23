@@ -39,13 +39,13 @@ module Medusa
       end
 
       def build_initializers
-        initializers = []#Medusa::Initializers::RSync.new]
+        initializers = [Medusa::Initializers::RSync.new]
 
-        # if File.exist?("vendor/cache")
-        #   initializers << Medusa::Initializers::BundleLocal.new
-        # elsif File.exist?("Gemfile")
-        #   initializers << Medusa::Initializers::BundleCache.new
-        # end
+        if File.exist?("vendor/cache")
+          initializers << Medusa::Initializers::BundleLocal.new
+        elsif File.exist?("Gemfile")
+          initializers << Medusa::Initializers::BundleCache.new
+        end
 
         if File.exist?("config/environment.rb")
           initializers << Medusa::Initializers::Rails.new
