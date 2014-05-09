@@ -30,11 +30,16 @@ module Medusa #:nodoc:
       end
 
       def failure?
-        status.to_s == 'failure'
+        status.to_s == 'failed'
       end
 
       def fatal?
         status.to_s == 'fatal'
+      end
+
+      def status=(value)
+        raise ArgumentError, "Invalid status #{value}" unless ["passed", "failed", "fatal"].include?(value.to_s)
+        @status = value
       end
 
       def self.fatal_error(file, exception)

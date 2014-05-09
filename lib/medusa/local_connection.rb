@@ -34,12 +34,11 @@ module Medusa
     end
 
     def target
-      user = `who am i`.split(/\s+/).first
-      "/tmp/medusa/local-#{@project_root.basename}-#{@port}"
+      "localhost"
     end
 
     def work_path
-      Pathname.new(target)
+      Pathname.new(`pwd`.chomp).expand_path
     end
 
     def terminate!
@@ -57,7 +56,7 @@ module Medusa
     end
 
     def message_stream
-      @message_stream ||= begin
+      @message_stream ||= Timeout.timeout(5) do
         transport = TcpTransport.new("localhost", @port)
         transport.server!
         MessageStream.new(transport)

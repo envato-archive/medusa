@@ -262,6 +262,8 @@ module Medusa #:nodoc:
       @messages << connection.message_stream
 
       @workers << { :id => connection.worker_id, :pid => connection.medusa_pid, :io => connection.message_stream, :idle => false, :type => :local }
+    rescue Timeout::Error
+      trace "Local worker couldn't start up in time"
     end
 
     def boot_ssh_worker(worker)

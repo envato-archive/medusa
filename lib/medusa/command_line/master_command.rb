@@ -6,7 +6,7 @@ module Medusa
     # Handles invocation of a master from the command line.
     class MasterCommand < Escort::ActionCommand::Base
 
-      def find_files_from_arguments(arguments)
+      def find_files_from_arguments
         files = []
 
         arguments.each do |path_spec|
@@ -19,10 +19,10 @@ module Medusa
           end
         end
 
-        files        
+        files
       end
-      
-      def execute
+
+      def build_formatters
         formatters = Array(command_options[:formatters])
         formatters.collect! do |f|
           case f
@@ -36,41 +36,50 @@ module Medusa
         if formatters.length == 0
           formatters = [Medusa::Listener::ProgressBar.new]
         end
+      end
 
-        files = find_files_from_arguments(arguments)
+      def build_initializers
+        initializers = []#Medusa::Initializers::RSync.new]
 
-        initializers = [Medusa::Initializers::RSync.new]
-
-        if File.exist?("vendor/cache")
-          initializers << Medusa::Initializers::BundleLocal.new
-        elsif File.exist?("Gemfile")
-          initializers << Medusa::Initializers::BundleCache.new
-        end
+        # if File.exist?("vendor/cache")
+        #   initializers << Medusa::Initializers::BundleLocal.new
+        # elsif File.exist?("Gemfile")
+        #   initializers << Medusa::Initializers::BundleCache.new
+        # end
 
         if File.exist?("config/environment.rb")
           initializers << Medusa::Initializers::Rails.new
         end
 
-        initializers << Medusa::Initializers::Medusa.new
+        initializers << Medusa::Initializers::Medusa.new        
+      end
 
-        begin
-          all_workers = Array(command_options[:workers]).collect do |worker|
-            if worker == "local"
-              { 'type' => 'local', 'runners' => command_options[:runners] }
-            elsif worker =~ /(.*)\@(.*)\/(\d+)/
-              { 'type' => 'ssh', 'connect' => "#{$1}@#{$2}", 'runners' => $3.to_i }
-            elsif worker =~ /(.*)\/(\d+)/
-              { 'type' => 'ssh', 'connect' => "#{$1}", 'runners' => $2.to_i }
-            elsif worker =~ /(.*)\@(.*)/
-              { 'type' => 'ssh', 'connect' => "#{$1}@#{$2}", 'runners' => command_options[:runners] }
-            end
+      def build_workers
+        all_workers = Array(command_options[:workers]).collect do |worker|
+          if worker == "local"
+            { 'type' => 'local', 'runners' => command_options[:runners] }
+          elsif worker =~ /(.*)\@(.*)\/(\d+)/
+            { 'type' => 'ssh', 'connect' => "#{$1}@#{$2}", 'runners' => $3.to_i }
+          elsif worker =~ /(.*)\/(\d+)/
+            { 'type' => 'ssh', 'connect' => "#{$1}", 'runners' => $2.to_i }
+          elsif worker =~ /(.*)\@(.*)/
+            { 'type' => 'ssh', 'connect' => "#{$1}@#{$2}", 'runners' => command_options[:runners] }
           end
+        end
 
-          all_workers = [{ 'type' => 'local', 'runners' => command_options[:runners] }] if all_workers.empty?
-
+        all_workers = [{ 'type' => 'local', 'runners' => command_options[:runners] }] if all_workers.empty?
+        return all_workers
+      end
+      
+      def execute
+        begin
+          formatters = build_formatters
+          files = find_files_from_arguments
+          initializers = build_initializers
+          workers = build_workers
           root = `pwd`.chomp
 
-          Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => all_workers, :verbose => true, :initializers => initializers, :root => root)
+          Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => workers, :verbose => true, :initializers => initializers, :root => root)
         rescue => ex
           puts ex.class.name
           puts ex.message

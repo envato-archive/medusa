@@ -2,6 +2,9 @@ module Medusa
   module Initializers
     class RSync < Abstract
       def run(connection, master, worker)
+        # We don't need to rsync for a local worker.
+        return Result.success if connection.is_a?(LocalConnection)
+
         result = Result.new("mkdir -p #{connection.work_path.dirname}")
 
         status = connection.exec(result.command) do |output|

@@ -3,7 +3,6 @@ require 'pathname'
 
 require 'medusa/version'
 require 'medusa/trace'
-require 'medusa/pipe'
 
 require 'medusa/runner'
 require 'medusa/runner_client'
