@@ -1,52 +1,28 @@
 PATH
   remote: .
   specs:
-    medusa (0.0.1)
+    medusa (0.0.18)
+      escort
 
 GEM
   remote: https://rubygems.org/
   specs:
-    builder (2.1.2)
-    coderay (1.1.0)
-    cucumber (0.9.4)
-      builder (~> 2.1.2)
-      diff-lcs (~> 1.1.2)
-      gherkin (~> 2.2.9)
-      json (~> 1.4.6)
-      term-ansicolor (~> 1.0.5)
-    diff-lcs (1.1.3)
-    gherkin (2.2.9)
-      json (~> 1.4.6)
-      term-ansicolor (~> 1.0.5)
-    json (1.4.6)
-    method_source (0.8.2)
-    pry (0.9.12.6)
-      coderay (~> 1.0)
-      method_source (~> 0.8)
-      slop (~> 3.4)
-    rake (10.1.1)
-    rspec (2.0.1)
-      rspec-core (~> 2.0.1)
-      rspec-expectations (~> 2.0.1)
-      rspec-mocks (~> 2.0.1)
-    rspec-core (2.0.1)
-    rspec-expectations (2.0.1)
-      diff-lcs (>= 1.1.2)
-    rspec-mocks (2.0.1)
-      rspec-core (~> 2.0.1)
-      rspec-expectations (~> 2.0.1)
-    shoulda (2.10.3)
-    slop (3.4.7)
-    term-ansicolor (1.0.7)
+    diff-lcs (1.2.5)
+    escort (0.4.0)
+      nesty
+    nesty (1.0.2)
+    rspec (2.14.1)
+      rspec-core (~> 2.14.0)
+      rspec-expectations (~> 2.14.0)
+      rspec-mocks (~> 2.14.0)
+    rspec-core (2.14.8)
+    rspec-expectations (2.14.5)
+      diff-lcs (>= 1.1.3, < 2.0)
+    rspec-mocks (2.14.6)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  bundler (~> 1.3)
-  cucumber
   medusa!
-  pry
-  rake
-  rspec
-  shoulda (~> 2.10.3)
+  rspec (~> 2.1)
