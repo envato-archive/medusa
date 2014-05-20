@@ -4,6 +4,7 @@ $LOAD_PATH << File.expand_path(File.join(File.dirname(__FILE__), "../lib"))
 
 
 require 'medusa'
+require 'medusa/cli'
 require 'escort'
 
 Escort::App.create do |app|

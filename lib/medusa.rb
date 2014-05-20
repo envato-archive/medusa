@@ -64,5 +64,3 @@ require 'medusa/initializers/rsync'
 require 'medusa/worker_initializer'
 require 'medusa/runner_initializer'
 
-require 'medusa/command_line/master_command'
-require 'medusa/command_line/worker_command'
