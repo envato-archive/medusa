@@ -26,7 +26,9 @@ module Medusa
           end
 
           begin
-            RSpec::Core::Runner.run(["-fRSpec::Core::Formatters::MedusaFormatter", file.to_s], err, medusa_output)
+            RSpec::Core::Formatters::MedusaFormatter.with_stdout do
+              RSpec::Core::Runner.run(["-fRSpec::Core::Formatters::MedusaFormatter", file.to_s], err, medusa_output)
+            end
           rescue Object => ex
             message_stream.write(Messages::TestResult.fatal_error(file, ex))
           ensure

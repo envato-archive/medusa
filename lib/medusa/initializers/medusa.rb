@@ -5,7 +5,7 @@ module Medusa
       def run(connection, master, worker)
         connection.exec("mkdir -p #{connection.work_path}")
 
-        command = "cd #{connection.work_path} && "
+        command = "cd #{connection.work_path} && bundle exec "
 
         command += ENV["MEDUSA_BIN"] || "medusa"
 

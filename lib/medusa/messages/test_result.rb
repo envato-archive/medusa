@@ -10,6 +10,7 @@ module Medusa #:nodoc:
       message_attr :exception_backtrace
       message_attr :file
       message_attr :driver
+      message_attr :stdout
 
       def handle_by_worker(worker, runner)
         worker.send_message_to_master(self)

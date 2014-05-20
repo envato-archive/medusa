@@ -24,6 +24,7 @@ module Medusa
 
       def build_formatters
         formatters = Array(command_options[:formatters])
+
         formatters.collect! do |f|
           case f
           when "progress" then Medusa::Listener::ProgressBar.new
@@ -31,11 +32,14 @@ module Medusa
           end
         end
 
-        formatters = formatters.compact.uniq
+        formatters.compact!
+        formatters.uniq!
 
         if formatters.length == 0
-          formatters = [Medusa::Listener::ProgressBar.new]
+          formatters = [Medusa::Listener::Log.new]
         end
+
+        formatters
       end
 
       def build_initializers

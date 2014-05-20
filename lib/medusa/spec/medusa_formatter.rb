@@ -4,6 +4,18 @@ module RSpec
   module Core
     module Formatters
       class MedusaFormatter < BaseFormatter
+
+        def self.with_stdout
+          old_stdout = $stdout
+          @stream = $stdout = StringIO.new
+          yield
+          $stdout = old_stdout
+        end
+
+        def self.stdout_stream
+          @stream || StringIO.new
+        end
+
         def example_group_started(example_group)
           super(example_group)
           output.puts Medusa::Messages::ExampleGroupStarted.new(group_name: example_group.description)
@@ -16,6 +28,7 @@ module RSpec
 
         def example_started(example)
           super(example)
+          self.class.stdout_stream.string = ""
           output.puts Medusa::Messages::ExampleStarted.new(example_name: example.description)
         end
 
@@ -64,6 +77,7 @@ module RSpec
             r.status = example.execution_result[:status].to_sym
             r.driver = Medusa::Drivers::RspecDriver.name
             r.file = file
+            r.stdout = self.class.stdout_stream.string.chomp
 
             if example.exception
               r.exception = example.exception

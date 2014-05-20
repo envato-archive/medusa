@@ -27,4 +27,4 @@ PLATFORMS
 
 DEPENDENCIES
   medusa!
-  rspec (~> 2.1)
+  rspec (~> 2.14)

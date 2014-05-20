@@ -18,12 +18,6 @@ module Medusa #:nodoc:
         @errors = false
         @tests_executed = 0
         @fatals = 0
-
-        Curses.noecho
-        Curses.init_screen
-        Curses.setpos(0,0)
-        Curses.addstr("Medusa")
-        Curses.refresh
       end
 
 
@@ -56,7 +50,7 @@ module Medusa #:nodoc:
       end
 
       def initializer_output(message, worker)
-        line = message.output.to_s.split("\n").last
+        line = message.output.to_s.split(/[\n\r]/).last
         id = worker.respond_to?(:[]) ? worker[:id] : worker.worker_id
         
         @workers[id] = "#{message.initializer}: #{line}"
@@ -74,7 +68,7 @@ module Medusa #:nodoc:
       def result_received(result)
         if result.failure? || result.fatal?
           @errors = true
-          @error_collection << [result.name, result.exception_class, result.exception_message, result.exception_backtrace]
+          @error_collection << [result.name, result.exception_class, result.exception_message, result.exception_backtrace, result.stdout]
         end
 
         @tests_executed += 1
@@ -104,6 +98,7 @@ module Medusa #:nodoc:
       private
 
       def render
+        setup!
         Curses.clear
 
         Curses.setpos(0,0)
@@ -127,11 +122,14 @@ module Medusa #:nodoc:
       end
 
       def render_errors
-        @error_collection.each do |(name, exception, message, backtrace)|
+        @error_collection.each do |(name, exception, message, backtrace, stdout)|
           @output.write "#{name}\n"
           @output.write "#{message}\n"
           @output.write "#{exception}\n"
           @output.write "#{backtrace.join("\n")}\n"
+          if stdout.strip.length > 0
+            @output.write "STDOUT:\n#{stdout}\n"
+          end
           @output.write "\n\n"
         end
 
@@ -154,6 +152,9 @@ module Medusa #:nodoc:
         end
 
         @output.flush
+      rescue => ex
+        @output.write("ERROR: #{ex}")
+        @output.flush
       end
 
       def render_summary
@@ -163,20 +164,31 @@ module Medusa #:nodoc:
       end
 
       def render_progress_bar
+        setup!
         width = 30
         Curses.setpos(@workers.length + 4, 5)
         complete = ((@files_completed.to_f / @total_files.to_f) * width).to_i
         Curses.addstr 'Medusa Testing ['
-        Curses.addstr @errors ? "\033[0;31m" : "\033[0;32m"
         complete.times{Curses.addstr '#'}
         Curses.addstr '>'
         (width-complete).times{Curses.addstr ' '}
-        Curses.addstr "\033[0m"
         Curses.addstr "] #{@files_completed}/#{@total_files} - #{@tests_executed} completed, #{@error_collection.length} failures, #{@fatals} fatals."
 
       rescue
         Curses.addstr("ERROR")
         Curses.refresh
+      end
+
+      def setup!
+        @setup ||= begin
+          Curses.noecho
+          Curses.init_screen
+          Curses.setpos(0,0)
+          Curses.addstr("Medusa")
+          Curses.refresh
+          true
+        end
+
       end
     end
   end

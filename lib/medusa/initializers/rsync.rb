@@ -5,6 +5,14 @@ module Medusa
         # We don't need to rsync for a local worker.
         return Result.success if connection.is_a?(LocalConnection)
 
+        result = Result.new("ssh #{connection.target} mkdir -p #{connection.work_path}")
+
+        status = local_exec(result.command) do |output|
+          log(master, worker, output)
+          puts output
+          result << output
+        end
+
         result = Result.new("rsync -avz --delete --exclude .git --exclude medusa*.log --exclude .bundle #{master.project_root}/ #{connection.target}:#{connection.work_path}")
 
         status = local_exec(result.command) do |output|

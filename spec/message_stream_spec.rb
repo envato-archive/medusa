@@ -10,6 +10,7 @@ describe Medusa::MessageStream do
 
   describe "#wait_for_message" do
     it "returns a message from the stream" do
+      puts RSpec::Version::STRING
       expect(transport).to receive(:read).and_return(TestMessage.new.serialize)
       expect(stream.wait_for_message).to be_a(TestMessage)
     end

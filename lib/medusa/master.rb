@@ -35,7 +35,7 @@ module Medusa #:nodoc:
     # * :autosort
     #   * Set to false to disable automatic sorting by historical run-time per file
     def initialize(opts = { })
-      redirect_output("medusa-master.log")
+      # redirect_output("medusa-master.log")
       reg_trap_sighup
 
       opts.stringify_keys!

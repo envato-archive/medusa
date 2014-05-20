@@ -45,6 +45,7 @@ require 'medusa/listener/report_generator'
 require 'medusa/listener/notifier'
 require 'medusa/listener/progress_bar'
 require 'medusa/listener/teamcity'
+require 'medusa/listener/log'
 
 require 'medusa/drivers/abstract'
 require 'medusa/drivers/rspec_driver'
