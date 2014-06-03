@@ -1,31 +1,35 @@
 module Medusa
   module Drivers
     class Result
-      def initialize
-        @passed = 0
-        @failed = []
-        @pending = []
+      attr_accessor :description, :status, :run_time, :duration
+      attr_reader :exception_message, :exception_class, :exception_backtrace
+
+      def exception=(value)
+        @exception_class = value.class.name
+        @exception_message = value.message
+        @exception_backtrace = value.backtrace
       end
 
-      def inc_passed!
-        @passed += 1
+      def [](value)
+        self.send(value) if self.respond_to?(:value)
       end
 
-      def inc_failed!(name, output)
-        @failed << [name, output]
+      def success?
+        status == :success
       end
 
-      def inc_pending!(name)
-        @pending << name
+      def failure?
+        status == :failed
       end
 
-      def fatal!(message, backtrace)
-        @fatal = [message, backtrace]
+      def pending?
+        status == :pending
       end
 
-      def to_s
-        puts "Passed: #{@passed}, Failed: #{@failed.length}, Pending: #{@pending.length}, Fatal Error: #{!!@fatal}"
+      def fatal?
+        status == :fatal
       end
     end
   end
 end
+

@@ -1,6 +1,3 @@
-require 'test/unit'
-require 'test/unit/testresult'
-
 module Medusa #:nodoc:
   # Medusa class responsible for running test files.
   #
@@ -10,34 +7,50 @@ module Medusa #:nodoc:
   # The general convention is to have one Runner for each logical processor
   # of a machine.
   class Runner
-    include Medusa::Messages::Runner
     traceable('RUNNER')
 
     DEFAULT_LOG_FILE = 'medusa-runner.log'
 
+    attr_reader :io, :runner_id
+
+    def self.setup(&block)
+      @setup ||= []
+      @setup << block
+    end
+
+    def self.setups
+      @setup || []
+    end
+
     # Boot up a runner. It takes an IO object (generally a pipe from its
     # parent) to send it messages on which files to execute.
     def initialize(opts = {})
-      redirect_output( opts.fetch( :runner_log_file ) { DEFAULT_LOG_FILE } )
+      @runner_id = opts.fetch(:id) { rand(1000) }
+
+      redirect_output("medusa-runner-#{@runner_id}.log")
       reg_trap_sighup
 
       @io = opts.fetch(:io) { raise "No IO Object" }
       @verbose = opts.fetch(:verbose) { false }
-      @verbose = true
       @event_listeners = Array( opts.fetch( :runner_listeners ) { nil } )
       @options = opts.fetch(:options) { "" }
       @directory = get_directory
-      @start_immediately = opts.fetch(:start_immediately) { true }
 
       $stdout.sync = true
 
-      $0 = "[medusa] Runner waiting...."
+      $0 = "[medusa] Runner setting up...."
 
-      runner_begin
+      begin
+        runner_begin
+      rescue StandardError, LoadError, SyntaxError => ex
+        @io.write(Messages::RunnerStartupFailure.new(log: "#{ex.message}\n#{ex.backtrace.join('\n')}"))
+        $0 = "[medusa] Runner failed."
+        return
+      end
 
       trace 'Booted.'
 
-      # start_processing! if @start_immediately
+      @io.write Messages::RequestFile.new
 
       begin
         process_messages
@@ -45,10 +58,6 @@ module Medusa #:nodoc:
         trace ex.to_s
         raise ex
       end
-    end
-
-    def start_processing!
-      @io.write RequestFile.new
     end
 
     def reg_trap_sighup
@@ -63,37 +72,50 @@ module Medusa #:nodoc:
     def runner_begin
       trace "Firing runner_begin event"
       @event_listeners.each {|l| l.runner_begin( self ) }
+
+      trace "Running environment setup"
+      if File.exist?("medusa_runner_init.rb")
+        eval(IO.read("medusa_runner_init.rb"))
+      end
     end
 
     # Run a test file and report the results
     def run_file(file)
       trace "Running file: #{file}"
 
-      $0 = "[medusa] Running file #{file}"
+      $0 = "[medusa] File #{file}"
 
-      output = if file =~ /_spec.rb$/i
-        run_rspec_file(file)
-      elsif file =~ /.feature$/i
-        run_cucumber_file(file)
-      elsif file =~ /.js$/i or file =~ /.json$/i
-        run_javascript_file(file)
-      else
-        run_test_unit_file(file)
+      begin
+        if file =~ /_spec.rb$/i
+          run_rspec_file(file)
+        elsif file =~ /.feature$/i
+          run_cucumber_file(file)
+        elsif file =~ /.js$/i or file =~ /.json$/i
+          run_javascript_file(file)
+        else
+          run_test_unit_file(file)
+        end
+      rescue StandardError, LoadError => ex
+        @io.write Messages::TestResult.fatal_error(file, ex)
       end
-
-      output = "." if output == ""
-
-      @io.write Results.new(:output => output.to_s, :file => file)
 
       $0 = "[medusa] Runner waiting...."
 
-      return output
+      @io.write Messages::FileComplete.new(file: file)
+      @io.write Messages::RequestFile.new
     end
 
     # Stop running
     def stop
-      runner_end if @runner_began
-      @runner_began = @running = false
+      if @runner_began
+        @runner_began = false
+        runner_end
+      end
+
+      @running = false
+      @io.close
+
+      exit
     end
 
     def runner_end
@@ -114,13 +136,13 @@ module Medusa #:nodoc:
       while @running
         begin
           message = @io.gets
-          if message and !message.class.to_s.index("Worker").nil?
+          if message
             trace "Received message from worker"
             trace "\t#{message.inspect}"
-            message.handle(self)
+            message.handle_by_runner(self)
           else
             trace "Ignored message #{message.class}"
-            @io.write Ping.new
+            @io.write Messages::Ping.new
           end
         rescue IOError => ex
           trace "Runner lost Worker"
@@ -162,9 +184,9 @@ module Medusa #:nodoc:
       return output.join("\n")
     end
 
-    # run all the Specs in an RSpec file (NOT IMPLEMENTED)
+    # run all the Specs in an RSpec file
     def run_rspec_file(file)
-      Drivers::RspecDriver.new.execute(file)
+      Drivers::RspecDriver.new(@io).execute(file)
     end
 
     # run all the scenarios in a cucumber feature file
@@ -247,16 +269,6 @@ module Medusa #:nodoc:
           nil
         end
       end.compact
-    end
-
-    def redirect_output file_name
-      begin
-        $stderr = $stdout =  File.open(file_name, 'a')
-      rescue
-        # it should always redirect output in order to handle unexpected interruption
-        # successfully
-        $stderr = $stdout =  File.open(DEFAULT_LOG_FILE, 'a')
-      end
     end
 
     def get_directory

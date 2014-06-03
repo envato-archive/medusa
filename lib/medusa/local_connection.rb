@@ -1,0 +1,74 @@
+module Medusa
+  class LocalConnection
+
+    attr_reader :runners, :worker_id
+    attr_accessor :medusa_pid
+
+    def initialize(runners, project_root)
+      @port = TcpTransport.next_available_port + 100
+      @runners = runners
+      @project_root = project_root
+      @worker_id = rand(1000000)
+    end
+
+    def exec(command, &output_handler)
+      r, w = IO.pipe
+      pid = Process.spawn(command, :out => w, :err => w)
+
+      while true
+        termination_status = Process.wait(pid, Process::WNOHANG)
+        return $?.exitstatus if termination_status
+
+        buffer = begin
+          r.read_nonblock(100_000)
+        rescue IO::WaitReadable
+          nil
+        end
+
+        yield buffer if block_given? && buffer        
+      end
+
+    ensure
+      r.close rescue nil
+      w.close rescue nil
+    end
+
+    def target
+      "localhost"
+    end
+
+    def work_path
+      Pathname.new(`pwd`.chomp).expand_path
+    end
+
+    def terminate!
+      
+    end
+
+    def port
+      @port
+    end
+
+    def forwarded_port
+      @port
+    end
+
+    def exec_and_detach(command)
+      pid = Process.spawn(command)
+      Process.detach(pid)
+      pid
+    end
+
+    def message_stream
+      @message_stream ||= Timeout.timeout(5) do
+        transport = TcpTransport.new("localhost", @port)
+        transport.server!
+        MessageStream.new(transport)
+      end
+    end
+
+    def close
+      @message_stream.close if @message_stream
+    end
+  end
+end
