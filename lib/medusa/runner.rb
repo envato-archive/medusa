@@ -32,7 +32,6 @@ module Medusa #:nodoc:
 
       @io = opts.fetch(:io) { raise "No IO Object" }
       @verbose = opts.fetch(:verbose) { false }
-      @event_listeners = Array( opts.fetch( :runner_listeners ) { nil } )
       @options = opts.fetch(:options) { "" }
       @directory = get_directory
 
@@ -70,9 +69,6 @@ module Medusa #:nodoc:
     end
 
     def runner_begin
-      trace "Firing runner_begin event"
-      @event_listeners.each {|l| l.runner_begin( self ) }
-
       trace "Running environment setup"
       if File.exist?("medusa_runner_init.rb")
         eval(IO.read("medusa_runner_init.rb"))
@@ -120,7 +116,6 @@ module Medusa #:nodoc:
 
     def runner_end
       trace "Ending runner #{self.inspect}"
-      @event_listeners.each {|l| l.runner_end( self ) }
     end
 
     def format_exception(ex)

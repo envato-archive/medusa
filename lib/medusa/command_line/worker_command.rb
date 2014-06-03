@@ -20,7 +20,6 @@ module Medusa
             :io => messages, 
             :runners => command_options[:runners], 
             :verbose => true, 
-            :runner_listeners => [], 
             :runner_log_file => command_options[:runner_log_file],
             :worker_id => command_options[:worker_id]
           )

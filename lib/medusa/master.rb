@@ -73,8 +73,6 @@ module Medusa #:nodoc:
 
       puts @event_listeners.inspect
 
-      @string_runner_event_listeners = Array( opts.fetch( 'runner_listeners' ) { nil } )
-
       @runner_log_file = opts.fetch('runner_log_file') { nil }
       @verbose = opts.fetch('verbose') { false }
       @autosort = opts.fetch('autosort') { true }
