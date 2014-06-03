@@ -39,6 +39,7 @@ require 'medusa/local_connection'
 require 'medusa/remote_connection'
 
 require 'medusa/teamcity/messenger'
+require 'medusa/teamcity/message_factory'
 require 'medusa/listener/abstract'
 require 'medusa/listener/minimal_output'
 require 'medusa/listener/report_generator'
