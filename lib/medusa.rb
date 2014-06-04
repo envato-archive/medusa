@@ -9,6 +9,8 @@ require 'medusa/runner_client'
 require 'medusa/worker'
 require 'medusa/master'
 
+require 'medusa/overlord'
+
 require 'medusa/tcp_transport'
 require 'medusa/pipe_transport'
 require 'medusa/socket_transport'

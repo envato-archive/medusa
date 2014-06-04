@@ -1,4 +1,5 @@
 require 'escort'
+require_relative '../overlord'
 
 module Medusa
   class CommandLine
@@ -6,20 +7,16 @@ module Medusa
     # Handles invocation of a master from the command line.
     class MasterCommand < Escort::ActionCommand::Base
 
-      def find_files_from_arguments
-        files = []
-
+      def add_work_from_arguments(overlord)
         arguments.each do |path_spec|
           if File.file?(path_spec)
-            files << path_spec
+            overlord.add_work path_spec
           else
             Dir.glob(File.join(path_spec, "**", "*")).each do |file|
-              files << file if Drivers::Acceptor.accept?(file)
+              overlord.add_work file if Drivers::Acceptor.accept?(file)
             end
           end
         end
-
-        files
       end
 
       def build_formatters
@@ -83,7 +80,11 @@ module Medusa
           workers = build_workers
           root = `pwd`.chomp
 
-          Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => workers, :verbose => true, :initializers => initializers, :root => root)
+          overlord = Medusa::Overlord.new
+
+          add_work_from_arguments(overlord)
+
+          # Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => workers, :verbose => true, :initializers => initializers, :root => root)
         rescue => ex
           puts ex.class.name
           puts ex.message
