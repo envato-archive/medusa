@@ -1,28 +1,5 @@
 require 'spec_helper'
 
-class DummyKeeperClient
-  attr_reader :status, :message_handler
-
-  def initialize
-    @status = "uninitialized"
-  end
-
-  def prepare!(message_handler)
-    @status = "ready"
-    @message_handler = message_handler
-  end
-
-  def send_message(message)
-    @messages ||= []
-    @messages << message
-  end
-
-  def last_message_sent
-    @messages.last
-  end
-
-end
-
 describe Medusa::Overlord do
   subject(:overlord) { described_class.new }
 
@@ -31,30 +8,59 @@ describe Medusa::Overlord do
   end
 
   describe "#keepers" do
+    let(:keeper) { double("Keeper", :serve! => true) }
+
     it "acts like an array" do
-      dummy_worker = DummyKeeperClient.new
-      overlord.keepers << dummy_worker
-      expect(overlord.keepers).to eql [dummy_worker]
+      overlord.keepers << keeper
+      expect(overlord.keepers).to eql [keeper]
     end
   end
 
   describe "#prepare!" do
+    let(:keeper_1) { double("Keeper", :serve! => true) }
+    let(:keeper_2) { double("Keeper", :serve! => true) }
+
     it "should start all the keepers" do
-      overlord.keepers << DummyKeeperClient.new
-      overlord.keepers << DummyKeeperClient.new
+      overlord.keepers << keeper_1
+      overlord.keepers << keeper_2
 
       overlord.prepare!
 
-      expect(overlord.keepers.collect(&:status)).to eql ["ready", "ready"]
+      expect(keeper_1).to have_received(:serve!).with(overlord, instance_of(String))
+      expect(keeper_2).to have_received(:serve!).with(overlord, instance_of(String))
+    end
+  end
+
+  describe "#work!" do
+    it "allocates work to free keepers" do
+      keeper_1 = double("Keeper", :free? => false, :work! => true, :working? => false)
+      keeper_2 = double("Keeper", :free? => true, :work! => true, :working? => false)
+
+      overlord.keepers << keeper_1
+      overlord.keepers << keeper_2
+
+      overlord.add_work("file1.rb", "file2.rb")
+
+      overlord.work!
+
+      expect(keeper_2).to have_received(:work!).with("file1.rb")
+      expect(keeper_2).to have_received(:work!).with("file2.rb")
+      expect(keeper_1).to have_received(:work!).exactly(0).times
     end
 
-    it "should setup keeper message streams" do
-      overlord.keepers << DummyKeeperClient.new
-      overlord.keepers << DummyKeeperClient.new
+    it "waits until keepers have completed their work"
+  end
 
-      overlord.prepare!
+  describe "#receive_result" do  
+    it "distributes the result to reporters" do
+      reporter = double("Reporter", :receive_result => true)
+      some_result = double("Result")
 
-      expect(overlord.keepers.collect(&:message_handler)).to eql [overlord, overlord]
+      overlord.reporters << reporter
+
+      overlord.receive_result("some_file.rb", some_result)
+
+      expect(reporter).to have_received(:receive_result).with("some_file.rb", some_result)
     end
   end
 
@@ -65,47 +71,47 @@ describe Medusa::Overlord do
     end
   end
 
-  context "message handling" do
-    let(:client) { DummyKeeperClient.new }
+  # context "message handling" do
+  #   let(:client) { DummyKeeperClient.new }
 
-    describe Medusa::Messages::RequestFile do
+  #   describe Medusa::Messages::RequestFile do
 
-      it "provides work when asked" do
-        overlord.add_work("file1.rb", "file2.rb")
+  #     it "provides work when asked" do
+  #       overlord.add_work("file1.rb", "file2.rb")
 
-        overlord.handle_message(Medusa::Messages::RequestFile.new, client)
+  #       overlord.handle_message(Medusa::Messages::RequestFile.new, client)
 
-        last_message = client.last_message_sent
+  #       last_message = client.last_message_sent
 
-        expect(last_message).to be_a(Medusa::Messages::RunFile)
-        expect(last_message.file).to eql "file1.rb"
-      end
+  #       expect(last_message).to be_a(Medusa::Messages::RunFile)
+  #       expect(last_message.file).to eql "file1.rb"
+  #     end
 
-      it "marks a file as being in progress" do
-        overlord.add_work("file1.rb", "file2.rb")
+  #     it "marks a file as being in progress" do
+  #       overlord.add_work("file1.rb", "file2.rb")
 
-        overlord.handle_message(Medusa::Messages::RequestFile.new, client)
+  #       overlord.handle_message(Medusa::Messages::RequestFile.new, client)
 
-        expect(overlord.work_in_progress).to include("file1.rb")
-      end
+  #       expect(overlord.work_in_progress).to include("file1.rb")
+  #     end
 
-    end
+  #   end
 
-    describe Medusa::Messages::TestResult do
+  #   describe Medusa::Messages::TestResult do
 
-      before do
-        overlord.add_work("file1.rb", "file2.rb")
-        overlord.handle_message(Medusa::Messages::RequestFile.new, client)
-      end
+  #     before do
+  #       overlord.add_work("file1.rb", "file2.rb")
+  #       overlord.handle_message(Medusa::Messages::RequestFile.new, client)
+  #     end
 
-      it "marks a file as complete" do
-        overlord.handle_message(Medusa::Messages::TestResult.new(name: "file1.rb"), client)
+  #     it "marks a file as complete" do
+  #       overlord.handle_message(Medusa::Messages::TestResult.new(name: "file1.rb"), client)
 
-        expect(overlord.work_in_progress).to_not include("file1.rb")
-        expect(overlord.work_complete).to include("file1.rb")
-      end
+  #       expect(overlord.work_in_progress).to_not include("file1.rb")
+  #       expect(overlord.work_complete).to include("file1.rb")
+  #     end
 
-    end
-  end
+  #   end
+  # end
 
 end
