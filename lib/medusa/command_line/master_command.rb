@@ -74,15 +74,23 @@ module Medusa
       
       def execute
         begin
-          formatters = build_formatters
-          files = find_files_from_arguments
-          initializers = build_initializers
-          workers = build_workers
-          root = `pwd`.chomp
+          # formatters = build_formatters
+          # files = find_files_from_arguments
+          # initializers = build_initializers
+          # workers = build_workers
+          # root = `pwd`.chomp
+
+          command_options[:labrynths].each do |addr|
+            Medusa.dungeon_discovery.add_labrynth addr
+          end
 
           overlord = Medusa::Overlord.new
+          overlord.keepers << Medusa::Keeper.new
 
           add_work_from_arguments(overlord)
+
+          overlord.prepare!
+          overlord.work!
 
           # Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => workers, :verbose => true, :initializers => initializers, :root => root)
         rescue => ex

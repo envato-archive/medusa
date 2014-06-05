@@ -22,9 +22,11 @@ module Medusa
 
       @logger.debug("I serve you my Overlord!")
 
-      if @dungeon = DungeonDiscovery.claim!(self)
+      if @dungeon = Medusa.dungeon_discovery.claim!(self)
         @minions = @dungeon.fit_out(nil)
       end
+
+      raise ArgumentError, "No available dungeons" if @dungeon.nil?
     end
 
     def abandon_dungeon!
@@ -34,22 +36,30 @@ module Medusa
     end
 
     def work!(file)
+      raise ArgumentError, "No minions" if @minions.nil? || @minions.length == 0
       @minions.select(&:free?).first.work!(file)
     end
 
     def free?
-      @minions.select(&:free?).length > 0
+      @minions && @minions.select(&:free?).length > 0
     end
 
     def working?
-      @minions.select(&:free?).length != @minions.length
+      @minions && @minions.select(&:free?).length != @minions.length
     end
 
     def receive_result(file, result, minion)
       @logger.debug("Received result for file #{file}")
       @logger.debug("#{@minions.select(&:free?).length} minions are free.")
 
-      @overlord.receive_result(file, result, self, minion)
+      @overlord.receive_result(file, result)
+    rescue => ex
+      @logger.error(ex.to_s)
+    end
+
+    def fatal_error(file, exception, minion)
+      @logger.debug("Received a fatal error from a minion on #{file}")
+      @logger.debug(exception.to_s)
     end
 
     private

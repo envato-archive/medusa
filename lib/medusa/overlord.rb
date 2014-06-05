@@ -74,7 +74,12 @@ module Medusa
         @logger.debug("#{len} keepers are still busy")
       end
 
+      @keepers.each do |keeper|
+        keeper.abandon_dungeon!
+      end
+
       @results.freeze
+      @results
     end
 
     def receive_result(file, result)

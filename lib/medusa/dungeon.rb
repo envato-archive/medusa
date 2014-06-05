@@ -1,5 +1,9 @@
 require 'securerandom'
+require 'pathname'
+
 require_relative 'dungeon_constructor'
+require_relative 'logger'
+require_relative 'minion'
 
 module Medusa
 
@@ -43,24 +47,32 @@ module Medusa
     # A keeper will claim the dungeon and spawn
     # minions as many minions as it can handle.
     def claim!(keeper, plan)
+      @keeper ||= keeper
+
+      raise ArgumentError, "Already claimed" if keeper != @keeper
+
       @name = "#{keeper.name}'s #{@original_name}"
 
       @logger.debug("Claimed by a keeper! Henceforth I will be known as #{@name}.")
       @logger = Medusa.logger.tagged("#{self.class.name} #{@name}")
+    end
 
-      @keeper = keeper
-
+    def fit_out(plan)
       DungeonConstructor.build!(self, plan)
 
       spawn_minions
-
       @minions
     end
 
-    def abandoned!
-      @minions.each(&:kill)
+    def claimed?
+      !!@keeper
+    end
+
+    def abandon!
+      @minions.each(&:die!)
       @name = @original_name
-      @logger.debug("Abandoned by my keeper! I resume my diminished life as #{@name}.")
+      @keeper = nil
+      @logger.debug("Abandoned by my keeper! Resuming my diminished life as #{@name}.")
     end
 
     private
