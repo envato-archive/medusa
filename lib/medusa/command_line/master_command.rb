@@ -1,5 +1,6 @@
 require 'escort'
 require_relative '../overlord'
+require_relative '../listener/log'
 
 module Medusa
   class CommandLine
@@ -80,6 +81,8 @@ module Medusa
           # workers = build_workers
           # root = `pwd`.chomp
 
+          # Medusa.logger = Logger.new("/dev/null")
+
           overlord = Medusa::Overlord.new
 
           command_options[:labrynths].each do |addr|
@@ -88,6 +91,9 @@ module Medusa
           end
 
           add_work_from_arguments(overlord)
+
+          overlord.reporters << Medusa::Listener::MinimalOutput.new
+          # overlord.reporters << Medusa::Listener::Log.new
 
           overlord.prepare!
           overlord.work!

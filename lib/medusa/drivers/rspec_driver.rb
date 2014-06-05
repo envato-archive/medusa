@@ -1,3 +1,5 @@
+require_relative 'abstract'
+
 module Medusa
   module Drivers
     class RspecDriver < Abstract
@@ -8,12 +10,12 @@ module Medusa
       end
 
       def execute(file, minion)
+        require 'rspec'
+        require 'medusa/spec/medusa_formatter'
+
         parent, child = PipeTransport.pair
 
         pid = fork do
-          require 'rspec'
-          require 'medusa/spec/medusa_formatter'
-
           $0 = "[medusa] RspecDriver Running: #{file}"
 
           err = StringIO.new
@@ -42,10 +44,8 @@ module Medusa
 
         while Process.wait(pid, Process::WNOHANG).nil?
           begin
-            Timeout.timeout(0.1) do
-              message = parent_stream.wait_for_message
-              minion.handle_message message if message.is_a?(Message)
-            end
+            message = parent_stream.wait_for_message
+            minion.inform_work_result message if message.is_a?(Messages::TestResult)
           rescue Timeout::Error
           end
         end

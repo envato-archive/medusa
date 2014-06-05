@@ -1,3 +1,4 @@
+require 'benchmark'
 require_relative 'logger'
 require_relative 'keepers/local_client'
 require_relative 'messages/request_file'
@@ -47,51 +48,47 @@ module Medusa
       @work_in_progress = []
       @results = []
       @reporters = []
+      @execution_times = []
     end
 
     def prepare!
-      @logger.debug("Preparing my underlings")
+      b = Benchmark.measure do
+        @logger.debug("Preparing my underlings")
 
-      pool = KeeperPool.new(KEEPER_NAMES)
-      
-      @keepers.each do |keeper|
-        pool.add_keeper(keeper)
+        @pool = KeeperPool.new(KEEPER_NAMES)
+        
+        @keepers.each do |keeper|
+          @pool.add_keeper(keeper)
+        end
+
+        @pool.prepare!(self)
+
+        @logger.debug("My underlings report they're ready for work")
       end
 
-      pool.prepare!(self)
-
-      @logger.debug("My underlings report they're ready for work")
+      @execution_times << [:prepare!, b.real]
     end
 
     def work!
       @logger.debug("Giving work to my underlings")
 
-      while file = @work.shift
-        sleep(1) until keeper = @keepers.select(&:free?).first
-        keeper.work!(file)
-      end
+      inform_reporters!(:report_all_work_begun, @work)
 
-      @logger.debug("Impatiently waiting for underlings to finish")
+      @pool.accept_work!(@work)
 
-      while @keepers.select(&:working?).length > 0
-        sleep(1)
-        len = @keepers.select(&:working?).length
-        @logger.debug("#{len} keepers are still busy")
-      end
-
-      @keepers.each do |keeper|
-        keeper.abandon_dungeon!
-      end
+      inform_reporters!(:report_all_work_completed)
 
       @results.freeze
       @results
     end
 
-    def receive_result(file, result)
-      @logger.debug("Got result for #{file}")
-      @results << [file, result]
+    def inform_work_result(result)
+      @results << result
+      inform_reporters!(:report_work_result, result)
+    end
 
-      inform_reporters!(:receive_result, file, result)
+    def inform_work_complete(file)
+      inform_reporters!(:report_work_complete, file)
     end
 
     def shutdown!

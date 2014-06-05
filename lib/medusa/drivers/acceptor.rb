@@ -1,4 +1,4 @@
-# require_relative 'rspec_driver'
+require_relative 'rspec_driver'
 
 module Medusa
   module Drivers
@@ -16,11 +16,11 @@ module Medusa
         def execute(file, minion)
           @logger.debug("Doing work on #{file}")
           sleep(rand(5))
-          minion.receive_result(file, true)
+          minion.inform_work_result(Messages::TestResult.new(file: file, name: "Test 1"))
           sleep(rand(5))
-          minion.receive_result(file, true)
+          minion.inform_work_result(Messages::TestResult.new(file: file, name: "Test 2"))
           sleep(rand(5))
-          minion.receive_result(file, true)
+          minion.inform_work_result(Messages::TestResult.new(file: file, name: "Test 3"))
           @logger.debug("Done work on #{file}")
         rescue => ex
           @logger.fatal(ex.to_s)
@@ -31,8 +31,11 @@ module Medusa
       DRIVERS = [DummyDriver]
 
       def self.accept?(file)
-        accepted = DRIVERS.detect { |driver| driver.accept?(file) }
-        accepted.new
+        if accepted = DRIVERS.detect { |driver| driver.accept?(file) }
+          accepted.new
+        else
+          nil
+        end
       end
 
     end

@@ -5,6 +5,10 @@ module Medusa
     @logger ||= Logger.new(STDOUT)
   end
 
+  def self.logger=(logger)
+    @logger = logger
+  end
+
   class Logger
     def initialize(output)
       @output = output

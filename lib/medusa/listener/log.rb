@@ -52,8 +52,12 @@ module Medusa #:nodoc:
         end
       end
 
-      def result_received(result)
-        puts "[result-received] #{result.status} #{result.name}"
+      def receive_result(file, result)
+        puts "[result-received] #{result.file} - #{result.status} #{result.name}"
+
+        if result.status == :failed
+          puts result.exception_message
+        end
       end
 
       # Increment completed files count and update bar
@@ -62,6 +66,7 @@ module Medusa #:nodoc:
 
       # Break the line
       def testing_end
+        puts "[testing-end] Testing has ended"
       end
 
       private

@@ -23,6 +23,7 @@ module Medusa
       @labrynths.each do |(labrynth, object)|
         @logger.debug("Checking labrynth #{labrynth}")
         if dungeon = object.claim_dungeon(keeper)
+          @logger.debug("Dungeon claimed")
           return dungeon
         end
       end

@@ -5,19 +5,25 @@ module Medusa #:nodoc:
     # full error output, if any.
     class MinimalOutput < Medusa::Listener::Abstract
       # output a starting message
-      def testing_begin(files)
+      def report_all_work_begun(files)
         @output.write "Medusa Testing:\n#{files.inspect}\n"
       end
 
       # output a finished message
-      def testing_end
+      def report_all_work_completed
         @output.write "\nMedusa Completed\n"
       end
 
-      # For each file, just output a . for a successful file, or the
-      # Failure/Error output from the tests
-      def file_end(file, output)
-        @output.write output
+      def report_work_result(result)
+        if result.failure? || result.fatal?
+          @output.write @errors ? "\033[0;31m" : "\033[0;32m"
+          @output.write "F"
+          @output.write "\033[0m"
+          @error_collection ||= []
+          @error_collection << [result.name, result.exception_class, result.exception_message, result.exception_backtrace, result.stdout]
+        else
+          @output.write "."
+        end
       end
     end
   end

@@ -1,6 +1,7 @@
 require_relative 'minion'
 require_relative 'dungeon'
 require_relative 'dungeon_discovery'
+require_relative 'keeper_ambassador'
 
 module Medusa
 
@@ -8,11 +9,12 @@ module Medusa
   # The Keeper receives commands from the Overlord and reports back any 
   # results from the Minions.
   class Keeper
-    attr_reader :name, :minions
+    attr_reader :name, :minions, :overlord
 
     def initialize
       @logger = Medusa.logger.tagged(self.class.name)
       @name = "Neverborn"
+      @minions = []
     end
 
     def serve!(overlord, name)
@@ -21,62 +23,43 @@ module Medusa
       @logger = Medusa.logger.tagged("#{self.class.name} - #{name}")
 
       @logger.debug("I serve you my Overlord!")
+    end
 
-      if @dungeon = Medusa.dungeon_discovery.claim!(self)
-        @minions = @dungeon.fit_out(nil)
-      end
+    def claim!(dungeon)
+      @dungeon = dungeon
+      
+      minions = @dungeon.fit_out(nil)
 
-      raise ArgumentError, "No available dungeons" if @dungeon.nil?
+      @ambassador = KeeperAmbassador.new(self, minions)
     end
 
     def abandon_dungeon!
       @logger.debug("Abandoning dungeon")
 
       @dungeon.abandon!
+      @dungeon = nil
+      @ambassador = nil
     end
 
     def work!(file)
-      raise ArgumentError, "No minions" if @minions.nil? || @minions.length == 0
-      @minions.select(&:free?).first.work!(file)
+      return @ambassador.delegate_work!(file)
     end
 
-    def free?
-      @minions && @minions.select(&:free?).length > 0
+    def can_accept_more_work?
+      @ambassador.minions_free?
     end
 
     def working?
-      @minions && @minions.select(&:free?).length != @minions.length
+      @ambassador.work_remains?
     end
 
-    def receive_result(file, result, minion)
-      @logger.debug("Received result for file #{file}")
-      @logger.debug("#{@minions.select(&:free?).length} minions are free.")
-
-      @overlord.receive_result(file, result)
-    rescue => ex
-      @logger.error(ex.to_s)
+    def inform_work_result(result)
+      @overlord.inform_work_result(result)
     end
 
-    def fatal_error(file, exception, minion)
-      @logger.debug("Received a fatal error from a minion on #{file}")
-      @logger.debug(exception.to_s)
+    def inform_work_complete(file)
+      @overlord.inform_work_complete(file)
     end
 
-    private
-
-    def claim_dungeon!
-      @logger.debug("Locating a dungeon...")
-
-      @dungeon = Dungeon.new
-      @minions = @dungeon.claimed!(self, nil)
-    end   
-
-    def handle_command(message)
-      @logger.debug("Received command #{message}")
-    end
-
-    def handle_message(message)
-      @logger.debug("Received message #{message}")      
-    end
   end
 end
