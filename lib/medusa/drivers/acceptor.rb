@@ -27,7 +27,7 @@ module Medusa
         end
       end
 
-      # DRIVERS = [RspecDriver, DummyDriver]
+      # DRIVERS = [RspecDriver]
       DRIVERS = [DummyDriver]
 
       def self.accept?(file)

@@ -7,7 +7,7 @@ module Medusa
         file =~ /_spec\.rb$/
       end
 
-      def execute(file)
+      def execute(file, minion)
         parent, child = PipeTransport.pair
 
         pid = fork do
@@ -44,7 +44,7 @@ module Medusa
           begin
             Timeout.timeout(0.1) do
               message = parent_stream.wait_for_message
-              message_bus.write message if message.is_a?(Message)
+              minion.handle_message message if message.is_a?(Message)
             end
           rescue Timeout::Error
           end

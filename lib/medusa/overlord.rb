@@ -3,6 +3,7 @@ require_relative 'keepers/local_client'
 require_relative 'messages/request_file'
 require_relative 'messages/test_result'
 require_relative 'messages/run_file'
+require_relative 'keeper_pool'
 
 module Medusa
   KEEPER_NAMES = [
@@ -51,9 +52,13 @@ module Medusa
     def prepare!
       @logger.debug("Preparing my underlings")
 
+      pool = KeeperPool.new(KEEPER_NAMES)
+      
       @keepers.each do |keeper|
-        keeper.serve!(self, KEEPER_NAMES.sample)
+        pool.add_keeper(keeper)
       end
+
+      pool.prepare!(self)
 
       @logger.debug("My underlings report they're ready for work")
     end

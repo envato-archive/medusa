@@ -80,12 +80,12 @@ module Medusa
           # workers = build_workers
           # root = `pwd`.chomp
 
+          overlord = Medusa::Overlord.new
+
           command_options[:labrynths].each do |addr|
             Medusa.dungeon_discovery.add_labrynth addr
+            overlord.keepers << Medusa::Keeper.new
           end
-
-          overlord = Medusa::Overlord.new
-          overlord.keepers << Medusa::Keeper.new
 
           add_work_from_arguments(overlord)
 
