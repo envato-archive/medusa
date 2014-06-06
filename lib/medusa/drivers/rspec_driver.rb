@@ -1,59 +1,36 @@
-require_relative 'abstract'
 
 module Medusa
   module Drivers
-    class RspecDriver < Abstract
-      REDIRECTION_FILE = "/tmp/rspec-output.log"
+    class RspecDriver
+      def initialize
+        require 'rspec'
+        require 'medusa/spec/medusa_formatter'
+
+        @logger = Medusa.logger.tagged(self.class.name)
+      end
 
       def self.accept?(file)
         file =~ /_spec\.rb$/
       end
 
       def execute(file, minion)
-        require 'rspec'
-        require 'medusa/spec/medusa_formatter'
+        medusa_output = EventIO.new
+        err = StringIO.new
 
-        parent, child = PipeTransport.pair
-
-        pid = fork do
-          $0 = "[medusa] RspecDriver Running: #{file}"
-
-          err = StringIO.new
-
-          medusa_output = EventIO.new
-          message_stream = MessageStream.new(child)
-
-          medusa_output.on_output do |message|
-            message_stream.send_message message if message.is_a?(Message)
-          end
-
-          begin
-            RSpec::Core::Formatters::MedusaFormatter.with_stdout do
-              RSpec::Core::Runner.run(["-fRSpec::Core::Formatters::MedusaFormatter", file.to_s], err, medusa_output)
-            end
-          rescue Object => ex
-            message_stream.write(Messages::TestResult.fatal_error(file, ex))
-          ensure
-            message_stream.close
+        medusa_output.on_output do |message|
+          if message.is_a?(Messages::TestResult)
+            minion.inform_work_result message
           end
         end
 
-        $0 = "[medusa] RspecDriver Listening: #{file}"
-
-        parent_stream = MessageStream.new(parent)
-
-        while Process.wait(pid, Process::WNOHANG).nil?
-          begin
-            message = parent_stream.wait_for_message
-            minion.inform_work_result message if message.is_a?(Messages::TestResult)
-          rescue Timeout::Error
+        begin
+          RSpec::Core::Formatters::MedusaFormatter.with_stdout do
+            RSpec::Core::Runner.run(["-fRSpec::Core::Formatters::MedusaFormatter", file.to_s], err, medusa_output)
           end
+        rescue => ex
+          minion.inform_work_result Messages::TestResult.fatal_error(file, ex)
         end
-
-      ensure
-        parent_stream.close rescue nil
       end
-
     end
   end
 end

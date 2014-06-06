@@ -60,6 +60,8 @@ module Medusa
     def accept_work!(work)
       # Continually dish out work to keepers until all work is gone.
       while file = work.shift
+        process!
+        
         until @keepers.any? { |keeper| keeper.work!(file) }
           process!
         end
@@ -97,19 +99,24 @@ module Medusa
     # and then processed later by #process!
     class MethodProxy
       def initialize(overlord)
-        @queue = Queue.new
+        @queue = []
+        @mutex = Mutex.new
         @overlord = overlord
         @logger = Medusa.logger.tagged(self.class.name)
       end
 
       def method_missing(name, *args)
-        @queue << [name, args]
+        @mutex.synchronize do
+          @queue << [name, args]
+        end
       end
 
       def process!
-        while !@queue.empty?
-          command = @queue.pop(true)
-          @overlord.send(command[0], *command[1])
+        @mutex.synchronize do       
+          while !@queue.empty?
+            command = @queue.pop
+            @overlord.send(command[0], *command[1])
+          end
         end
       end
     end

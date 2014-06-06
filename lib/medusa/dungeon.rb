@@ -30,6 +30,7 @@ module Medusa
   # Dungeons can be created on-demand when Medusa is running locally, or they
   # can be part of a persistent Labrynth for internal network dungeon discovery.
   class Dungeon
+    include DRbUndumped
     ALPHABET = ('a'..'z').to_a
 
     attr_reader :location, :minions, :name

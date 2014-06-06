@@ -28,7 +28,12 @@ module Medusa
     def claim!(dungeon)
       @dungeon = dungeon
       
-      minions = @dungeon.fit_out(nil)
+      minions = []
+
+      # Dereferences the Array from DRb. Otherwise strange bugs ensue.
+      @dungeon.fit_out(nil).each do |minion|
+        minions << minion
+      end
 
       @ambassador = KeeperAmbassador.new(self, minions)
     end

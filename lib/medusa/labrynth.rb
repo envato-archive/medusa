@@ -18,12 +18,15 @@ module Medusa
 
     def serve!
       raise ArgumentError, "No dungeons configured" if @dungeons.length == 0
-
+      
+      trap("INT") { DRb.stop_service }
+      
       @logger.debug("Starting labrynth at #{@bind_address}")
 
       @dungeons = @dungeons.freeze
 
       DRb.start_service("druby://#{@bind_address}", self)
+      $SAFE = 1
       
       while DRb.thread.alive?
         sleep(1)

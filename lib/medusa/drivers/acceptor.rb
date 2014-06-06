@@ -1,4 +1,5 @@
 require_relative 'rspec_driver'
+require_relative 'forked_rspec_driver'
 
 module Medusa
   module Drivers
@@ -27,8 +28,8 @@ module Medusa
         end
       end
 
-      # DRIVERS = [RspecDriver]
-      DRIVERS = [DummyDriver]
+      DRIVERS = [ForkedRspecDriver]
+      # DRIVERS = [DummyDriver]
 
       def self.accept?(file)
         if accepted = DRIVERS.detect { |driver| driver.accept?(file) }

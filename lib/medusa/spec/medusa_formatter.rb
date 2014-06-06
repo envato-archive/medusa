@@ -5,6 +5,12 @@ module RSpec
     module Formatters
       class MedusaFormatter < BaseFormatter
 
+        def initialize(*args)
+          super
+
+          @example_path = []
+        end
+
         def self.with_stdout
           old_stdout = $stdout
           @stream = $stdout = StringIO.new
@@ -18,18 +24,19 @@ module RSpec
 
         def example_group_started(example_group)
           super(example_group)
-          output.puts Medusa::Messages::ExampleGroupStarted.new(group_name: example_group.description)
+
+          @example_path.push example_group.description
         end
 
         def example_group_finished(example_group)
           super(example_group)
-          output.puts Medusa::Messages::ExampleGroupFinished.new(group_name: example_group.description)
+
+          @example_path.pop
         end
 
         def example_started(example)
           super(example)
           self.class.stdout_stream.string = ""
-          output.puts Medusa::Messages::ExampleStarted.new(example_name: example.description)
         end
 
         def example_passed(example)
@@ -72,7 +79,7 @@ module RSpec
 
         def example_to_result(example, file)
           Medusa::Messages::TestResult.new.tap do |r|
-            r.name = example.description
+            r.name = "#{@example_path.join(' ')} #{example.description}"
             r.duration = example.execution_result[:run_time]
             r.status = example.execution_result[:status].to_sym
             r.driver = Medusa::Drivers::RspecDriver.name
