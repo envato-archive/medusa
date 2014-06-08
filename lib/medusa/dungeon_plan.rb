@@ -14,5 +14,10 @@ module Medusa
     # For example, creating a database, etc.
     attr_reader :minion_training
 
+    def initialize
+      @blueprints = []
+      @minion_training = []
+    end
+
   end
 end

@@ -4,7 +4,7 @@ Thread.abort_on_exception=true
 module Medusa
 
   # Manages issues commands to multiple keepers at once. This should be
-  # the only part the the communication pipeline which needs to 
+  # the only part the the communication pipeline which needs to
   # worry about threads.
   class KeeperPool
     def initialize(names)
@@ -21,6 +21,8 @@ module Medusa
     def prepare!(overlord)
       threads = []
 
+      plan = overlord.plan
+
       @main_thread_proxy = MethodProxy.new(overlord)
       @logger.debug("Preparing #{@keepers.length} Keepers")
 
@@ -30,7 +32,7 @@ module Medusa
         name = @names.sample
         @names.delete(name)
 
-        keeper.serve!(@main_thread_proxy, name)
+        keeper.serve!(@main_thread_proxy, name, plan)
         dungeon = Medusa.dungeon_discovery.claim!(keeper)
 
         if dungeon
@@ -60,6 +62,7 @@ module Medusa
     def accept_work!(work)
       # Continually dish out work to keepers until all work is gone.
       while file = work.shift
+        @logger.debug("Finding a keeper for #{file}")
         until @keepers.any? { |keeper| keeper.work!(file) }
           process!
         end
@@ -90,7 +93,7 @@ module Medusa
     end
 
     # The method proxy allows the Keepers to report back information
-    # to the Overlord's thread so that the Overlord doesn't need 
+    # to the Overlord's thread so that the Overlord doesn't need
     # worry about thread safety.
     #
     # Messages from the various keeper threads are put into a queue

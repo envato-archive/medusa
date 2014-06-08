@@ -6,10 +6,10 @@ require_relative 'keeper_ambassador'
 module Medusa
 
   # A Keeper is responsible for the management of it's Minions and Dungeons.
-  # The Keeper receives commands from the Overlord and reports back any 
+  # The Keeper receives commands from the Overlord and reports back any
   # results from the Minions.
   class Keeper
-    attr_reader :name, :minions, :overlord
+    attr_reader :name, :minions, :overlord, :plan
 
     def initialize
       @logger = Medusa.logger.tagged(self.class.name)
@@ -17,9 +17,10 @@ module Medusa
       @minions = []
     end
 
-    def serve!(overlord, name)
+    def serve!(overlord, name, plan)
       @overlord = overlord
       @name = name
+      @plan = plan
       @logger = Medusa.logger.tagged("#{self.class.name} - #{name}")
 
       @logger.debug("I serve you my Overlord!")
@@ -27,10 +28,7 @@ module Medusa
 
     def claim!(dungeon)
       @dungeon = dungeon
-      
-      minions = @dungeon.fit_out(nil)
-
-      @ambassador = KeeperAmbassador.new(self, minions)
+      @minions_union = @dungeon.fit_out!
     end
 
     def abandon_dungeon!
@@ -42,15 +40,23 @@ module Medusa
     end
 
     def work!(file)
-      return @ambassador.delegate_work!(file)
+      raise ArgumentError, "You must claim a dungeon first" if @minions_union.nil?
+      result = @minions_union.delegate(:work!, file)
+      @logger.debug("Got work request for #{file} = #{result}")
+      result
+    end
+
+    def report(information)
+      @logger.debug("Report - #{information}")
+      @overlord.receive_report(information)
     end
 
     def can_accept_more_work?
-      @ambassador.minions_free?
+      @minions_union.can_work?
     end
 
     def working?
-      @ambassador.work_remains?
+      @minions_union.working?
     end
 
     def inform_work_result(result)

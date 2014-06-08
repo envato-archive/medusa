@@ -4,6 +4,7 @@ require 'pathname'
 require_relative 'dungeon_constructor'
 require_relative 'logger'
 require_relative 'minion'
+require_relative 'union'
 
 module Medusa
 
@@ -21,12 +22,12 @@ module Medusa
 
   # Oh how far can we stretch this analogy!
   #
-  # The Dungeon is where we hold your code. Minions are responsible for doing 
+  # The Dungeon is where we hold your code. Minions are responsible for doing
   # work in a Dungeon (testing), as decided by the Overlord.
   #
   # A Dungeon starts as unclaimed, meaning it's a place where code can be run
   # but needs to be claimed by a Keeper to be of service.
-  # 
+  #
   # Dungeons can be created on-demand when Medusa is running locally, or they
   # can be part of a persistent Labrynth for internal network dungeon discovery.
   class Dungeon
@@ -34,11 +35,12 @@ module Medusa
 
     attr_reader :location, :minions, :name
 
-    def initialize(minions = 3)
+    def initialize(minions = 3, port_start = 41000)
+      @port_start = port_start
       @name = @original_name = "#{DUNGEON_NAMES.sample} #{SecureRandom.random_number(666)}"
       @logger = Medusa.logger.tagged("#{self.class.name} #{@name}")
 
-      @minions = 1.upto(minions).collect { |number| Minion.new(self, number) }
+      @number_of_minions = minions
 
       safe_name = @name.scan(/[\w\d]+/).join("-").gsub(/-{2,}/, '-')
       @location = Pathname.new("/tmp/medusa/dungeons/#{safe_name}")
@@ -51,17 +53,21 @@ module Medusa
 
       raise ArgumentError, "Already claimed" if keeper != @keeper
 
+      @dungeon_blueprints = plan.blueprints
+      @minion_training = plan.minion_training
+
       @name = "#{keeper.name}'s #{@original_name}"
 
       @logger.debug("Claimed by a keeper! Henceforth I will be known as #{@name}.")
       @logger = Medusa.logger.tagged("#{self.class.name} #{@name}")
     end
 
-    def fit_out(plan)
-      DungeonConstructor.build!(self, plan)
-
+    def fit_out!
+      @logger.debug("Fitting out the Dungeon.")
+      build_dungeon
       spawn_minions
-      @minions
+
+      return @union
     end
 
     def claimed?
@@ -69,24 +75,35 @@ module Medusa
     end
 
     def abandon!
-      @minions.each(&:die!)
+      @union.finished
       @name = @original_name
       @keeper = nil
       @logger.debug("Abandoned by my keeper! Resuming my diminished life as #{@name}.")
     end
 
+    def report(information)
+      @keeper.report(information)
+    end
+
     private
 
-    def prepare(plan)
+    def build_dungeon
       @logger.debug("Preparing dungeon...")
+      DungeonConstructor.build!(self, @dungeon_blueprints)
     end
 
     def spawn_minions
-      @logger.debug("Spawning #{@minions.length} minions...")
+      @logger.debug("Spawning #{@number_of_minions} minions...")
 
-      @minions.each do |minion|
-        minion.receive_the_gift_of_life!(@keeper)
-      end      
+      @union = Union.new(self, @port_start)
+
+      @number_of_minions.times do |minion_name|
+        minion = Minion.new(self, minion_name)
+        @union.represent(minion)
+      end
+
+      @union.wait_for_ready
+      @union.provide_training(@minion_training)
     end
   end
 end

@@ -1,4 +1,4 @@
-module Medusa #:nodoc: 
+module Medusa #:nodoc:
   module Messages #:nodoc:
 
     class TestResult < Medusa::Message
@@ -36,6 +36,10 @@ module Medusa #:nodoc:
 
       def fatal?
         status.to_s == 'fatal'
+      end
+
+      def success?
+        !failure? && !fatal?
       end
 
       def status=(value)

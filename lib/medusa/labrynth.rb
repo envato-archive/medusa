@@ -19,23 +19,19 @@ module Medusa
     def serve!
       raise ArgumentError, "No dungeons configured" if @dungeons.length == 0
 
-      @logger.debug("Starting labrynth at #{@bind_address}")
+      @logger.info("Starting labrynth at #{@bind_address}")
 
       @dungeons = @dungeons.freeze
 
-      DRb.start_service("druby://#{@bind_address}", self)
-      
-      while DRb.thread.alive?
-        sleep(1)
-        print @dungeons.collect(&:claimed?).inspect + "\r"
-      end
+      @server = DRb::DRbServer.new("druby://#{@bind_address}", self)
+      @server.thread.join
     end
 
     def claim_dungeon(keeper)
       @mutex.synchronize do
         free_dungeon = @dungeons.reject(&:claimed?).sample
         if free_dungeon
-          free_dungeon.claim!(keeper, nil)
+          free_dungeon.claim!(keeper, keeper.plan)
           return free_dungeon
         else
           return nil

@@ -5,6 +5,7 @@ require_relative 'messages/request_file'
 require_relative 'messages/test_result'
 require_relative 'messages/run_file'
 require_relative 'keeper_pool'
+require_relative 'dungeon_plan'
 
 module Medusa
   KEEPER_NAMES = [
@@ -33,11 +34,11 @@ module Medusa
     "The Loki Master"
   ]
 
-  # The Overlord is responsible for setting up keepers and their dungeons, 
+  # The Overlord is responsible for setting up keepers and their dungeons,
   # and keeping track of what needs to be done, what has been done, and
   # distributing any results onto the relevant reporters.
   class Overlord
-    attr_reader :keepers, :reporters, :transport, :work, :work_in_progress, :work_complete
+    attr_reader :keepers, :reporters, :transport, :work, :work_in_progress, :work_complete, :plan
 
     def initialize
       @logger = Medusa.logger.tagged(self.class.name)
@@ -49,6 +50,8 @@ module Medusa
       @results = []
       @reporters = []
       @execution_times = []
+
+      @plan = DungeonPlan.new
     end
 
     def prepare!
@@ -56,7 +59,7 @@ module Medusa
         @logger.debug("Preparing my underlings")
 
         @pool = KeeperPool.new(KEEPER_NAMES)
-        
+
         @keepers.each do |keeper|
           @pool.add_keeper(keeper)
         end
@@ -87,8 +90,16 @@ module Medusa
       inform_reporters!(:report_work_result, result)
     end
 
-    def inform_work_complete(file)
-      inform_reporters!(:report_work_complete, file)
+    def receive_report(message)
+      @logger.debug("Received report #{message}")
+      case message
+      when String then inform_reporters!(:message, message)
+      when Messages::TestResult then inform_reporters!(:report_work_result, message)
+      else
+        @logger.debug("Unkonwn report type: #{message.class.name}")
+      end
+    rescue => ex
+      @logger.error(ex.to_s)
     end
 
     def shutdown!
@@ -98,6 +109,7 @@ module Medusa
 
     def add_work(*files)
       @work.concat(files.flatten)
+      @logger.debug("Added #{files.flatten.length} files to the workload")
     end
 
     def handle_message(message, keeper)
@@ -111,6 +123,7 @@ module Medusa
 
     def inform_reporters!(action, *arguments)
       @reporters.each do |reporter|
+        @logger.debug("Informing reporter #{reporter} of #{action}")
         reporter.send(action.to_sym, *arguments) if reporter.respond_to?(action.to_sym)
       end
     end

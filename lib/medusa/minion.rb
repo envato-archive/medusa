@@ -37,21 +37,29 @@ module Medusa
       @training_complete = true
     end
 
-    def work!(file, report_back)
+    def report_to(reporter)
+      @logger.debug("I will report to #{reporter}!")
+      @reporter = reporter
+    end
+
+    def train!(plan)
+      @logger.debug("Training master!")
+    end
+
+    def work!(file)
       @current_file = file
       @logger.debug("Yessss master! Working on #{file}!")
 
       if driver = Drivers::Acceptor.accept?(file)
-        Thread.new do
+        # Thread.new do
           begin
-            driver.execute(file, report_back)
+            driver.execute(file, @reporter)
           rescue => ex
-            @keeper.inform_work_result(Messages::TestResult.fatal_error(file, ex))
+            @reporter.report(Messages::TestResult.fatal_error(file, ex))
           ensure
             @current_file = nil
-            report_back.inform_work_complete(file, self)
           end
-        end
+        # end
       end
     end
 
