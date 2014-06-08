@@ -1,10 +1,13 @@
 require 'securerandom'
+require 'drb'
 
 require_relative 'minion_trainer'
 require_relative 'drivers/acceptor'
 
 module Medusa
   class Minion
+    include DRbUndumped
+
     attr_reader :dungeon, :name
 
     def initialize(dungeon, name)
@@ -47,19 +50,21 @@ module Medusa
     end
 
     def work!(file)
-      @current_file = file
+      raise ArgumentError, "Already working" if @current_work
+
       @logger.debug("Yessss master! Working on #{file}!")
+      @logger.debug("Will report back to #{@reporter}")
 
       if driver = Drivers::Acceptor.accept?(file)
-        # Thread.new do
-          begin
-            driver.execute(file, @reporter)
-          rescue => ex
-            @reporter.report(Messages::TestResult.fatal_error(file, ex))
-          ensure
-            @current_file = nil
-          end
-        # end
+        begin
+          driver.execute(file, @reporter)
+        rescue => ex
+          @reporter.report(Messages::TestResult.fatal_error(file, ex))
+        ensure
+          @logger.debug("Reporting work complete")
+          @current_file = nil
+          @reporter.report(Messages::FileComplete.new(file))
+        end
       end
     end
 
@@ -68,16 +73,6 @@ module Medusa
       @keeper = nil
       @training_complete = false
       @logger = Medusa.logger.tagged("#{self.class.name} #{@dungeon.name} Minion ##{@name}")
-    end
-
-    def receive_result(file, result)
-      @keeper.receive_result(file, result, self)
-    end
-
-    def handle_message(message)
-      case message
-      when Messages::TestResult then receive_result(message.file, message)
-      end
     end
 
   end

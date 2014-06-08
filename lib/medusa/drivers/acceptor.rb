@@ -1,4 +1,5 @@
 require_relative 'rspec_driver'
+require_relative 'forked_rspec_driver'
 
 module Medusa
   def self.register_driver(driver)

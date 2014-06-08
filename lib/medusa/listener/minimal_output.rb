@@ -12,6 +12,15 @@ module Medusa #:nodoc:
       # output a finished message
       def report_all_work_completed
         @output.write "\nMedusa Completed\n"
+
+        @error_collection.each do |(what, exception_class, exception_message, exception_backtrace, stdout)|
+          @output.write "\n\n"
+          @output.write "#{what}\n"
+          @output.write "#{exception_class} - #{exception_message}\n"
+          @output.write "#{exception_backtrace}\n"
+        end
+
+        @output.write("\n\n")
       end
 
       def report_work_result(result)

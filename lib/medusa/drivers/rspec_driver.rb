@@ -1,9 +1,7 @@
-require_relative 'abstract'
 
 module Medusa
   module Drivers
-    class RspecDriver < Abstract
-
+    class RspecDriver
       def initialize
         @logger = Medusa.logger.tagged(self.class.name)
       end
@@ -42,7 +40,6 @@ module Medusa
 
         Process.wait(pid)
       end
-
     end
   end
 end
