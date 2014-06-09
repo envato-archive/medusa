@@ -48,6 +48,17 @@ module Medusa #:nodoc:
         end
       end
 
+      def exception=(value)
+        @exception = TestResult.safe_exception(value)
+      end
+
+      class SafeException < Struct.new(:message, :class_name, :backtrace)
+      end
+
+      def self.safe_exception(exception)
+        SafeException.new(exception.message, exception.class.name, exception.backtrace)
+      end
+
     end
   end
 end

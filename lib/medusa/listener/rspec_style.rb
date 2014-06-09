@@ -23,16 +23,16 @@ module Medusa #:nodoc:
           @output.write("     ")
 
           if failure.exception
-            @output.puts(read_failed_line(failure.exception, failure.file))
-          end
+            @output.puts(read_failed_line(failure.exception, failure.file).strip)
 
-          @output.write("     #{failure.exception.class.name}:\n")
-          failure.exception.message.to_s.split("\n").each do |line|
-            @output.puts("       #{line}")
-          end
+            @output.write("     #{failure.exception.class_name}:\n")
+            failure.exception.message.to_s.split("\n").each do |line|
+              @output.puts("       #{line}")
+            end
 
-          format_backtrace(failure.exception.backtrace, failure.file).each do |line|
-            @output.puts("       #{line}")
+            format_backtrace(failure.exception.backtrace, failure.file).each do |line|
+              @output.puts("       #{line}")
+            end
           end
 
           @output.puts("\n")
