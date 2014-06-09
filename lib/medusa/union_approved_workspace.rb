@@ -1,5 +1,7 @@
 require 'drb'
 
+require_relative 'parent_termination_watcher'
+
 module Medusa
 
   # The new Union Approved Workspace program was recently introduced by the
@@ -19,14 +21,17 @@ module Medusa
       @target = target
 
       @pid = fork do
+        $0 = "[medusa] #{target.class.name} #{target.name}"
+
+        terminator = ParentTerminationWatcher.new
+
         reporting_client = DRbObject.new(nil, reporting_uri)
         target.report_to(reporting_client)
 
         server = DRb::DRbServer.new("druby://localhost:#{@port}", target)
-        server.thread.join
-      end
 
-      trap("KILL") { Process.kill("KILL", @pid) }
+        terminator.block_until_parent_dead!
+      end
     end
 
     # Verifies the connection is alive.

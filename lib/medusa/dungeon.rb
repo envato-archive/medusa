@@ -34,7 +34,7 @@ module Medusa
     include DRbUndumped
     ALPHABET = ('a'..'z').to_a
 
-    attr_reader :location, :minions, :name
+    attr_reader :location, :minions, :name, :keeper
 
     def initialize(minions = 3, port_start = 41000)
       @port_start = port_start
@@ -54,16 +54,19 @@ module Medusa
 
       raise ArgumentError, "Already claimed" if keeper != @keeper
 
-      @dungeon_blueprints = plan.blueprints
-      @minion_training = plan.minion_training
+      @dungeon_blueprints = plan.blueprints.dup
+      @minion_training = plan.minion_training.dup
 
       @name = "#{keeper.name}'s #{@original_name}"
 
       @logger.debug("Claimed by a keeper! Henceforth I will be known as #{@name}.")
+      @logger.debug("blueprints are #{@dungeon_blueprints.inspect}")
       @logger = Medusa.logger.tagged("#{self.class.name} #{@name}")
     end
 
     def fit_out!
+      raise ArgumentError, "Not claimed" if @keeper.nil?
+
       @logger.debug("Fitting out the Dungeon.")
       build_dungeon
       spawn_minions
@@ -89,7 +92,7 @@ module Medusa
     private
 
     def build_dungeon
-      @logger.debug("Preparing dungeon...")
+      @logger.debug("Preparing dungeon... #{@dungeon_blueprints.inspect}")
       DungeonConstructor.build!(self, @dungeon_blueprints)
     end
 

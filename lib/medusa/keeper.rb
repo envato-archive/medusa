@@ -1,7 +1,6 @@
 require_relative 'minion'
 require_relative 'dungeon'
 require_relative 'dungeon_discovery'
-require_relative 'keeper_ambassador'
 
 module Medusa
 

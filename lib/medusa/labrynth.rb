@@ -32,6 +32,8 @@ module Medusa
 
       @logger.info("Starting labrynth at #{@bind_address} with #{@dungeons.length} dungeon(s).")
 
+      $0 = "[medusa] Labrynth serving at #{@bind_address} with #{@dungeons.length} dungeon(s)."
+
       @dungeons = @dungeons.freeze
 
       @server = DRb::DRbServer.new("druby://#{@bind_address}", self)

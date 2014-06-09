@@ -26,13 +26,15 @@ describe Medusa::Minion do
 
   describe "#work!" do
     let(:driver) { double("Driver", execute: true) }
+    let(:reporter) { double("Reporter", report: true) }
 
     it "delegates to the correct driver" do
       expect(Medusa::Drivers::Acceptor).to receive(:accept?).with("some_file.rb").and_return(driver)
 
+      minion.report_to(reporter)
       minion.work!("some_file.rb")
 
-      expect(driver).to have_received(:execute).with("some_file.rb", minion)
+      expect(driver).to have_received(:execute).with("some_file.rb", reporter)
     end
   end
 end

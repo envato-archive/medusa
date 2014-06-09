@@ -82,6 +82,8 @@ module Medusa
           # workers = build_workers
           # root = `pwd`.chomp
 
+          $0 = "[medusa] Overlord running specs"
+
           Medusa.logger.level = case command_options[:verbosity]
           when "INFO" then ::Logger::INFO
           when "DEBUG" then ::Logger::DEBUG

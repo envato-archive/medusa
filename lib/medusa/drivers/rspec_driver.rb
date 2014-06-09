@@ -15,6 +15,8 @@ module Medusa
         require 'medusa/spec/medusa_formatter'
 
         pid = fork do
+          $0 = "[medusa] RSpec Driver - #{file}"
+
           @logger.debug("Forked")
 
           err = StringIO.new
