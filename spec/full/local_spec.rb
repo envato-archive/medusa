@@ -9,7 +9,11 @@ class TestResultCapture
   end
 
   def report_work_result(result)
-    @results << [result.name, result.success?]
+    @results << [:work_result, result.name, result.success?, result]
+  end
+
+  def report_work_complete(file)
+    @results << [:file_complete, file]
   end
 
   def message(string)
@@ -18,7 +22,7 @@ class TestResultCapture
 end
 
 describe "Local execution" do
-  let(:spec_files) { Dir.glob(Pathname.new(__FILE__).dirname.join("../fixtures/*_spec.rb").to_s) }
+  let(:spec_file) { Pathname.new(__FILE__).dirname.join("../fixtures/sample_spec.rb").to_s }
 
   it "runs the spec files correctly" do
     port_start = 18100
@@ -32,7 +36,7 @@ describe "Local execution" do
         labrynth.serve!
       end
 
-      sleep(1)
+      sleep(0.1) until Medusa::Labrynth.available_at?("localhost:#{port_start}")
 
       Medusa.dungeon_discovery.add_labrynth("localhost:#{port_start}")
 
@@ -42,11 +46,15 @@ describe "Local execution" do
       overlord.keepers << Medusa::Keeper.new
       overlord.prepare!
 
-      overlord.add_work(spec_files)
+      overlord.add_work(spec_file)
       overlord.reporters << reporter
       overlord.work!
 
-      expect(reporter).to have(6).results
+      expect(reporter).to have(2).results
+      expect(reporter.results[0][0]).to eql :work_result
+      expect(reporter.results[1][0]).to eql :file_complete
+
+      expect(reporter.results[0][3].stdout).to eql "Checking one == one"
     ensure
       Process.kill("KILL", labrynth_pid)
     end

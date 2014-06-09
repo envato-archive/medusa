@@ -1,5 +1,6 @@
 require 'escort'
 require_relative '../overlord'
+require_relative '../drivers/acceptor'
 require_relative '../listener/log'
 
 module Medusa
@@ -53,7 +54,7 @@ module Medusa
           initializers << Medusa::Initializers::Rails.new
         end
 
-        initializers << Medusa::Initializers::Medusa.new        
+        initializers << Medusa::Initializers::Medusa.new
       end
 
       def build_workers
@@ -72,7 +73,7 @@ module Medusa
         all_workers = [{ 'type' => 'local', 'runners' => command_options[:runners] }] if all_workers.empty?
         return all_workers
       end
-      
+
       def execute
         begin
           # formatters = build_formatters
@@ -81,28 +82,56 @@ module Medusa
           # workers = build_workers
           # root = `pwd`.chomp
 
-          # Medusa.logger = Logger.new("/dev/null")
+          Medusa.logger.level = case command_options[:verbosity]
+          when "INFO" then ::Logger::INFO
+          when "DEBUG" then ::Logger::DEBUG
+          when "WARN" then ::Logger::WARN
+          when "ERROR" then ::Logger::ERROR
+          when "FATAL" then ::Logger::FATAL
+          end
+
+          Medusa.register_driver Medusa::Drivers::RspecDriver.new
 
           overlord = Medusa::Overlord.new
+          overlord.keepers << Medusa::Keeper.new
 
           command_options[:labrynths].each do |addr|
             Medusa.dungeon_discovery.add_labrynth addr
             overlord.keepers << Medusa::Keeper.new
           end
 
+          pid = nil
+
+          # If no labrynths were specified, create a local one
+          # for immediate execution.
+          if command_options[:labrynths].length == 0
+            addr = "localhost:43553"
+            pid = fork do
+              l = Medusa::Labrynth.new(addr)
+              l.dungeons << Medusa::Dungeon.new(2)
+              l.serve!
+            end
+
+            sleep(0.1) until Medusa::Labrynth.available_at?(addr)
+
+            Medusa.dungeon_discovery.add_labrynth addr
+          end
+
           add_work_from_arguments(overlord)
 
-          overlord.reporters << Medusa::Listener::MinimalOutput.new
+          overlord.reporters << Medusa::Listener::RSpecStyle.new
           # overlord.reporters << Medusa::Listener::Log.new
 
           overlord.prepare!
           overlord.work!
-
-          # Medusa::Master.new(:files => files, :listeners => formatters.compact.uniq, :workers => workers, :verbose => true, :initializers => initializers, :root => root)
         rescue => ex
           puts ex.class.name
           puts ex.message
           puts ex.backtrace
+        ensure
+          if pid
+            Process.kill("KILL", pid)
+          end
         end
       end
 

@@ -15,6 +15,10 @@ module Medusa
       @logger = ::Logger.new(@output)
     end
 
+    def level=(level)
+      @logger.level = level
+    end
+
     def tagged(tag)
       TaggedLogger.new(self, tag)
     end

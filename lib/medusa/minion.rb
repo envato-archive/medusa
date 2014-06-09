@@ -53,18 +53,21 @@ module Medusa
       raise ArgumentError, "Already working" if @current_work
 
       @logger.debug("Yessss master! Working on #{file}!")
-      @logger.debug("Will report back to #{@reporter}")
 
       if driver = Drivers::Acceptor.accept?(file)
         begin
           driver.execute(file, @reporter)
-        rescue => ex
+        rescue Object => ex
+          @logger.error("I could not do what you ask master!")
+          @logger.error(ex.to_s)
           @reporter.report(Messages::TestResult.fatal_error(file, ex))
         ensure
           @logger.debug("Reporting work complete")
           @current_file = nil
-          @reporter.report(Messages::FileComplete.new(file))
+          @reporter.report(Messages::FileComplete.new(file: file))
         end
+      else
+        @logger.error("I cannot work on #{file} - there's no driver for it.")
       end
     end
 

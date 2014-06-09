@@ -15,6 +15,6 @@ describe "Minion and Driver" do
 
     sleep(0.1) while !minion.free?
 
-    expect(reporter).to have_received(:report).once
+    expect(reporter).to have_received(:report).twice
   end
 end

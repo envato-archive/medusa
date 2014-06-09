@@ -32,15 +32,13 @@ module Medusa
     # Verifies the connection is alive.
     def verify
       tries = 0
-      sleep(1)
-      return
 
       begin
         @logger.debug("Checking connection to #{@port}...")
         object = DRbObject.new(nil, "druby://localhost:#{@port}")
         object.to_s
         true
-      rescue Errno::ECONNREFUSED
+      rescue Errno::ECONNREFUSED, DRb::DRbConnError
         @logger.debug("Retrying connection to #{@port}...")
         raise "Couldn't establish workspace connection to #{@port}" if tries > 10
 

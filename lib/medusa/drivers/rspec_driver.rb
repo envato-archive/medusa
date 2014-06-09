@@ -14,11 +14,9 @@ module Medusa
         require 'rspec'
         require 'medusa/spec/medusa_formatter'
 
-        @logger.debug("Starting to fork")
-        reporter.report("Done")
-
         pid = fork do
           @logger.debug("Forked")
+
           err = StringIO.new
           medusa_output = EventIO.new
 
@@ -26,18 +24,20 @@ module Medusa
             reporter.report message
           end
 
+          RSpec.configuration = RSpec::Core::Configuration.new
           RSpec.world = RSpec::Core::World.new
 
           begin
             RSpec::Core::Formatters::MedusaFormatter.with_stdout do
               RSpec::Core::Runner.run(["-fRSpec::Core::Formatters::MedusaFormatter", file.to_s], err, medusa_output)
             end
-            reporter.report("Done")
           rescue Object => ex
             reporter.report(Messages::TestResult.fatal_error(file, ex))
           end
         end
 
+
+        @logger.debug("Waiting for process #{pid} to finish...")
         Process.wait(pid)
       end
     end

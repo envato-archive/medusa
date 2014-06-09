@@ -23,6 +23,6 @@ describe "Union and Minion" do
     union.wait_for_complete
     union.finished
 
-    expect(reporter).to have_received(:report).once
+    expect(reporter).to have_received(:report).twice
   end
 end

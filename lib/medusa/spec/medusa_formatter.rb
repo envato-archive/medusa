@@ -84,11 +84,11 @@ module RSpec
             r.status = example.execution_result[:status].to_sym
             r.driver = Medusa::Drivers::RspecDriver.name
             r.file = file
+            r.location = example.location
             r.stdout = self.class.stdout_stream.string.chomp
 
             if example.exception
               r.exception = example.exception
-              r.exception_backtrace.delete_if { |line| line =~ /gems\/rspec/ }
             end
           end
         end

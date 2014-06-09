@@ -76,7 +76,8 @@ module Medusa
     end
 
     def delegate(activity, *payload)
-      @logger.debug("Checking for free workers from #{@available_workers.length}")
+      @logger.debug("Checking for free workers from #{@available_workers.length} available worker(s)...")
+
       worker = @available_workers.pop(true) unless @available_workers.empty?
       return false if worker.nil?
 

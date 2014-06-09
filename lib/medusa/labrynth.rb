@@ -8,6 +8,17 @@ module Medusa
   class Labrynth
     attr_reader :dungeons
 
+    def self.available_at?(address)
+      obj = DRb::DRbObject.new(nil, "druby://#{address}")
+      obj.to_s
+      return true
+    rescue Errno::ECONNREFUSED, DRb::DRbConnError
+      return false
+    rescue => ex
+      puts "Unexpected error: #{ex.to_s}"
+      puts ex.class.name
+    end
+
     def initialize(bind_address)
       @dungeons = []
       @bind_address = bind_address
@@ -19,7 +30,7 @@ module Medusa
     def serve!
       raise ArgumentError, "No dungeons configured" if @dungeons.length == 0
 
-      @logger.info("Starting labrynth at #{@bind_address}")
+      @logger.info("Starting labrynth at #{@bind_address} with #{@dungeons.length} dungeon(s).")
 
       @dungeons = @dungeons.freeze
 

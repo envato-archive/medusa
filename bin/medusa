@@ -29,7 +29,7 @@ Escort::App.create do |app|
   app.command :worker do |command|
     command.summary "Starts a worker process"
     command.description "A worker process controls runners and communicates with a master to get work"
-  
+
     command.options do |opts|
       opts.opt :socket, "Connect to the Master via a Socket", :short => :none, :long => "--connect-socket", :type => :string
       opts.opt :tcp, "Connect to the Master via a TCP Connection (host:port)", :short => :none, :long => "--connect-tcp", :type => :string
@@ -49,6 +49,7 @@ Escort::App.create do |app|
     # opts.opt :formatters, "Formats the output", :short => '-f', :long => '--formatter', :type => :string, :multi => true
     # opts.opt :runners, "Default number of runners", :short => :none, :long => "--runners", :type => :integer, :default => 2
     opts.opt :labrynths, "Specify a list of labrynths to connect to", :short => '-c', :long => "--connect", :type => :string, :multi => true
+    opts.opt :verbosity, "Verbosity level of output for current execution (e.g. INFO, DEBUG)", :type => :string, :default => "FATAL"
   end
 
   app.action do |options, arguments|
