@@ -8,6 +8,8 @@ module Medusa
   class Labrynth
     attr_reader :dungeons
 
+    # Returns true if there's a labrynth available at the
+    # given location.
     def self.available_at?(address)
       obj = DRb::DRbObject.new(nil, "druby://#{address}")
       obj.to_s
@@ -40,6 +42,8 @@ module Medusa
       @server.thread.join
     end
 
+    # Called by client connections, in order to claim a dungeon
+    # for the given keeper. Returns nil if no dungeon is available.
     def claim_dungeon(keeper)
       @mutex.synchronize do
         free_dungeon = @dungeons.reject(&:claimed?).sample

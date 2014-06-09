@@ -1,4 +1,11 @@
 module Medusa
+
+  # Observes the process ID of the parent process, blocking the current
+  # thread until it changes.
+  #
+  # We use this to find out when a child forked process looses its parent, as
+  # the child's parent ID changes to the init process when the original
+  # parent process dies.
   class ParentTerminationWatcher
     def initialize
       @pid = Process.ppid
