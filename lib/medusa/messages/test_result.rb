@@ -1,14 +1,13 @@
-module Medusa #:nodoc: 
+module Medusa #:nodoc:
   module Messages #:nodoc:
 
     class TestResult < Medusa::Message
       message_attr :name
       message_attr :status
       message_attr :duration
-      message_attr :exception_message
-      message_attr :exception_class
-      message_attr :exception_backtrace
+      message_attr :exception
       message_attr :file
+      message_attr :location
       message_attr :driver
       message_attr :stdout
 
@@ -20,16 +19,6 @@ module Medusa #:nodoc:
         master.notify! :result_received, self
       end
 
-      def exception=(value)
-        if value
-          @exception_class = value.class.name
-          @exception_message = value.message
-          @exception_backtrace = value.backtrace
-        else
-          @exception_class = @exception_message = @exception_backtrace = nil
-        end
-      end
-
       def failure?
         status.to_s == 'failed'
       end
@@ -38,8 +27,16 @@ module Medusa #:nodoc:
         status.to_s == 'fatal'
       end
 
+      def pending?
+        status.to_s == 'pending'
+      end
+
+      def success?
+        status.to_s == "passed"
+      end
+
       def status=(value)
-        raise ArgumentError, "Invalid status #{value}" unless ["passed", "failed", "fatal"].include?(value.to_s)
+        raise ArgumentError, "Invalid status #{value}" unless ["pending", "passed", "failed", "fatal"].include?(value.to_s)
         @status = value
       end
 
@@ -49,6 +46,17 @@ module Medusa #:nodoc:
           r.file = file
           r.status = :fatal
         end
+      end
+
+      def exception=(value)
+        @exception = TestResult.safe_exception(value)
+      end
+
+      class SafeException < Struct.new(:message, :class_name, :backtrace)
+      end
+
+      def self.safe_exception(exception)
+        SafeException.new(exception.message, exception.class.name, exception.backtrace)
       end
 
     end

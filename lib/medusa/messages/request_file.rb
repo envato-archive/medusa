@@ -1,3 +1,5 @@
+require_relative '../message'
+
 module Medusa #:nodoc: 
   module Messages #:nodoc:
 

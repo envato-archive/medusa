@@ -1,28 +1,42 @@
+
 module Medusa
   module Drivers
-    class RspecDriver < Abstract
-      REDIRECTION_FILE = "/tmp/rspec-output.log"
+    class RspecDriver
+      def initialize
+        @logger = Medusa.logger.tagged(self.class.name)
+      end
 
-      def self.accept?(file)
+      def accept?(file)
         file =~ /_spec\.rb$/
       end
 
-      def execute(file)
-        parent, child = PipeTransport.pair
+      def execute(file, reporter)
+        require 'rspec'
+        require 'medusa/spec/medusa_formatter'
 
         pid = fork do
-          require 'rspec'
-          require 'medusa/spec/medusa_formatter'
+          $0 = "[medusa] RSpec Driver - #{file}"
 
-          $0 = "[medusa] RspecDriver Running: #{file}"
+          @logger.debug("Forked")
 
           err = StringIO.new
-
           medusa_output = EventIO.new
-          message_stream = MessageStream.new(child)
 
           medusa_output.on_output do |message|
-            message_stream.send_message message if message.is_a?(Message)
+            @logger.debug("Reporting message #{message.class.name}")
+            reporter.report message
+            @logger.debug("Message reported successfully.")
+          end
+
+          RSpec.configuration = RSpec::Core::Configuration.new
+          RSpec.world = RSpec::Core::World.new
+
+          # If there's some kind of terminal error on the parent, shutdown the child.
+          Thread.abort_on_exception = true
+          Thread.new do
+            watcher = ParentTerminationWatcher.new
+            watcher.block_until_parent_dead!
+            raise RuntimeError
           end
 
           begin
@@ -30,30 +44,13 @@ module Medusa
               RSpec::Core::Runner.run(["-fRSpec::Core::Formatters::MedusaFormatter", file.to_s], err, medusa_output)
             end
           rescue Object => ex
-            message_stream.write(Messages::TestResult.fatal_error(file, ex))
-          ensure
-            message_stream.close
+            reporter.report(Messages::TestResult.fatal_error(file, ex))
           end
         end
 
-        $0 = "[medusa] RspecDriver Listening: #{file}"
-
-        parent_stream = MessageStream.new(parent)
-
-        while Process.wait(pid, Process::WNOHANG).nil?
-          begin
-            Timeout.timeout(0.1) do
-              message = parent_stream.wait_for_message
-              message_bus.write message if message.is_a?(Message)
-            end
-          rescue Timeout::Error
-          end
-        end
-
-      ensure
-        parent_stream.close rescue nil
+        @logger.debug("Waiting for process #{pid} to finish...")
+        Process.wait(pid)
       end
-
     end
   end
 end

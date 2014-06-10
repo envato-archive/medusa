@@ -13,29 +13,24 @@ Escort::App.create do |app|
   app.summary "The most beautiful parallel build system, evar."
   app.description "Medusa runs your test suite across multiple processes and machines."
 
-  app.command :worker do |command|
-    command.summary "Starts a worker process"
-    command.description "A worker process controls runners and communicates with a master to get work"
-  
-    command.options do |opts|
-      opts.opt :socket, "Connect to the Master via a Socket", :short => :none, :long => "--connect-socket", :type => :string
-      opts.opt :tcp, "Connect to the Master via a TCP Connection (host:port)", :short => :none, :long => "--connect-tcp", :type => :string
-      opts.opt :runners, "How many runners to use to run tests", :short => :none, :long => "--runners", :type => :integer, :default => 1
-      opts.opt :runner_log_file, "Log the output to a file", :short => '-o', :long => '--out', :type => :string
-      opts.opt :worker_id, "The ID of this worker", :short => :none, :long => "--id", :type => :string
+  app.command :labyrinth do |command|
+    command.summary "Starts a Labyrinth which provides Dungeons to Keepers"
 
-      opts.conflict :socket, :tcp
+    command.options do |opts|
+      opts.opt :dungeons, "The number of dungeons to keep in the labyrinth", :short => '-d', :type => :integer, :default => 1
+      opts.opt :minions, "The number of minions each dungeons should have", :short => '-m', :type => :integer, :default => 3
     end
 
     command.action do |options, arguments|
-      Medusa::CommandLine::WorkerCommand.new(options, arguments).execute
+      Medusa::CommandLine::LabyrinthCommand.new(options, arguments).execute
     end
   end
 
   app.options do |opts|
-    opts.opt :formatters, "Formats the output", :short => '-f', :long => '--formatter', :type => :string, :multi => true
-    opts.opt :runners, "Default number of runners", :short => :none, :long => "--runners", :type => :integer, :default => 2
-    opts.opt :workers, "Specify a worker node (user@host/runners). If none specified, defaults to a local node", :short => '-c', :long => "--connect", :type => :string, :multi => true
+    # TODO - Put these back in.
+    # opts.opt :formatters, "Formats the output", :short => '-f', :long => '--formatter', :type => :string, :multi => true
+    opts.opt :labyrinths, "Specify a list of labyrinths to connect to", :short => '-c', :long => "--connect", :type => :string, :multi => true
+    opts.opt :verbosity, "Verbosity level of output for current execution (e.g. INFO, DEBUG)", :type => :string, :default => "FATAL"
   end
 
   app.action do |options, arguments|

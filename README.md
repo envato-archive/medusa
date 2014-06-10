@@ -58,7 +58,7 @@ Initialization
 
 This phase is started once the master begins setting up workers for execution. The initialization phase covers both pre and post `medusa worker` commands, such as `bundle install`, or reconnecting to a new activerecord database.
 
-Pre initialization messages are not passed from the worker, instead are passed directly from the master's Initialization classes to the Listeners.
+Pre initialization messages are not passed from the worker, instead are passed directly from the master's Initialization classes to the Reporters.
 
 Post initialization messages ARE passed from the worker. See `Medusa::Initializers::Rails` for an example.
 
