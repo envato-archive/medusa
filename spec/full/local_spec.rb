@@ -28,17 +28,17 @@ describe "Local execution" do
     port_start = 18100
 
     begin
-      labrynth_pid = fork do
+      labyrinth_pid = fork do
         Medusa.register_driver Medusa::Drivers::RspecDriver.new
 
-        labrynth = Medusa::Labrynth.new("localhost:#{port_start}")
-        labrynth.dungeons << Medusa::Dungeon.new(2, 41010)
-        labrynth.serve!
+        labyrinth = Medusa::Labyrinth.new("localhost:#{port_start}")
+        labyrinth.dungeons << Medusa::Dungeon.new(2, 41010)
+        labyrinth.serve!
       end
 
-      sleep(0.1) until Medusa::Labrynth.available_at?("localhost:#{port_start}")
+      sleep(0.1) until Medusa::Labyrinth.available_at?("localhost:#{port_start}")
 
-      Medusa.dungeon_discovery.add_labrynth("localhost:#{port_start}")
+      Medusa.dungeon_discovery.add_labyrinth("localhost:#{port_start}")
 
       reporter = TestResultCapture.new
 
@@ -56,7 +56,7 @@ describe "Local execution" do
 
       expect(reporter.results[0][3].stdout).to eql "Checking one == one"
     ensure
-      Process.kill("KILL", labrynth_pid)
+      Process.kill("KILL", labyrinth_pid)
     end
   end
 end

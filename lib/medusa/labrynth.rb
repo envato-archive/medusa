@@ -4,11 +4,11 @@ require_relative 'dungeon'
 
 module Medusa
 
-  # A Labrynth provides access to Dungeons over a TCP connection.
-  class Labrynth
+  # A Labyrinth provides access to Dungeons over a TCP connection.
+  class Labyrinth
     attr_reader :dungeons
 
-    # Returns true if there's a labrynth available at the
+    # Returns true if there's a labyrinth available at the
     # given location.
     def self.available_at?(address)
       obj = DRb::DRbObject.new(nil, "druby://#{address}")
@@ -32,9 +32,9 @@ module Medusa
     def serve!
       raise ArgumentError, "No dungeons configured" if @dungeons.length == 0
 
-      @logger.info("Starting labrynth at #{@bind_address} with #{@dungeons.length} dungeon(s).")
+      @logger.info("Starting labyrinth at #{@bind_address} with #{@dungeons.length} dungeon(s).")
 
-      $0 = "[medusa] Labrynth serving at #{@bind_address} with #{@dungeons.length} dungeon(s)."
+      $0 = "[medusa] Labyrinth serving at #{@bind_address} with #{@dungeons.length} dungeon(s)."
 
       @dungeons = @dungeons.freeze
 

@@ -9,26 +9,26 @@ module Medusa
   class DungeonDiscovery
 
     def initialize
-      @labrynths = []
+      @labyrinths = []
       @logger = Medusa.logger.tagged(self.class.name)
     end
 
-    def add_labrynth(address)
-      @labrynths << ["druby://#{address}", nil]
+    def add_labyrinth(address)
+      @labyrinths << ["druby://#{address}", nil]
     end
 
     def claim!(keeper)
       start_discovery
 
-      @labrynths.each do |(labrynth, object)|
-        @logger.debug("Checking labrynth #{labrynth}")
+      @labyrinths.each do |(labyrinth, object)|
+        @logger.debug("Checking labyrinth #{labyrinth}")
         if dungeon = object.claim_dungeon(keeper)
           @logger.debug("Dungeon claimed")
           return dungeon
         end
       end
 
-      @logger.debug("No dungeons returned from the labrynths.")
+      @logger.debug("No dungeons returned from the labyrinths.")
 
       return nil
     end
@@ -43,12 +43,12 @@ module Medusa
 
         @started_discovery = true
 
-        @labrynths.each do |labrynth_array|
-          @logger.debug("Connecting to labrynth #{labrynth_array[0]}")
-          labrynth_array[1] = DRbObject.new(nil, labrynth_array[0])
+        @labyrinths.each do |labyrinth_array|
+          @logger.debug("Connecting to labyrinth #{labyrinth_array[0]}")
+          labyrinth_array[1] = DRbObject.new(nil, labyrinth_array[0])
         end
 
-        @logger.debug("Labrynths connected")
+        @logger.debug("Labyrinths connected")
       end
     end
   end

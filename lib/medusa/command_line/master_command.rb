@@ -97,32 +97,33 @@ module Medusa
           overlord = Medusa::Overlord.new
           overlord.keepers << Medusa::Keeper.new
 
-          command_options[:labrynths].each do |addr|
-            Medusa.dungeon_discovery.add_labrynth addr
+          # Add any remote labyrinths if specified.
+          command_options[:labyrinths].each do |addr|
+            Medusa.dungeon_discovery.add_labyrinth addr
             overlord.keepers << Medusa::Keeper.new
           end
 
           pid = nil
 
-          # If no labrynths were specified, create a local one
+          # If no labyrinths were specified, create a local one
           # for immediate execution.
-          if command_options[:labrynths].length == 0
+          if command_options[:labyrinths].length == 0
             addr = "localhost:43553"
             pid = fork do
-              l = Medusa::Labrynth.new(addr)
+              l = Medusa::Labyrinth.new(addr)
               l.dungeons << Medusa::Dungeon.new(2)
               l.serve!
             end
 
-            sleep(0.1) until Medusa::Labrynth.available_at?(addr)
+            # Wait until the Labyrinth has started up.
+            sleep(0.1) until Medusa::Labyrinth.available_at?(addr)
 
-            Medusa.dungeon_discovery.add_labrynth addr
+            Medusa.dungeon_discovery.add_labyrinth addr
           end
 
           add_work_from_arguments(overlord)
 
           overlord.reporters << Medusa::Listener::RSpecStyle.new
-          # overlord.reporters << Medusa::Listener::Log.new
 
           overlord.prepare!
           overlord.work!

@@ -29,7 +29,7 @@ module Medusa
   # but needs to be claimed by a Keeper to be of service.
   #
   # Dungeons can be created on-demand when Medusa is running locally, or they
-  # can be part of a persistent Labrynth for internal network dungeon discovery.
+  # can be part of a persistent Labyrinth for internal network dungeon discovery.
   class Dungeon
     include DRbUndumped
     ALPHABET = ('a'..'z').to_a
@@ -40,7 +40,7 @@ module Medusa
     # minion processes won't be started until the dungeon has been claimed
     # and then fitted out. Use the #port_start option to control which
     # port range to use for internal minion communications. You'll want
-    # to use it when running multiple dungeons within a Labrynth.
+    # to use it when running multiple dungeons within a Labyrinth.
     def initialize(minions = 3, port_start = 41000)
       @port_start = port_start
       @name = @original_name = "#{DUNGEON_NAMES.sample} #{SecureRandom.random_number(666)}"

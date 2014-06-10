@@ -4,7 +4,7 @@ require 'pathname'
 require 'medusa/version'
 
 require 'medusa/overlord'
-require 'medusa/labrynth'
+require 'medusa/labyrinth'
 
 require 'medusa/message'
 require 'medusa/messages/died'
