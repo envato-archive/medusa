@@ -1,7 +1,7 @@
 module Medusa #:nodoc:
-  module Listener #:nodoc:
+  module Reporters #:nodoc:
     # Output a textual report at the end of testing
-    class ReportGenerator < Medusa::Listener::Abstract
+    class ReportGenerator < Medusa::Reporters::Abstract
       # Initialize a new report
       def testing_begin(files)
         @report = { }
@@ -45,5 +45,3 @@ module Medusa #:nodoc:
     end
   end
 end
-
-

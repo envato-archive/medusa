@@ -1,9 +1,9 @@
 module Medusa #:nodoc:
-  module Listener #:nodoc:
-    # Abstract listener that implements all the events
+  module Reporters #:nodoc:
+    # Abstract reporter that implements all the events
     # but does nothing.
     class Abstract
-      # Create a new listener.
+      # Create a new reporter.
       #
       # Output: The IO object for outputting any information.
       # Defaults to STDOUT, but you could pass a file in, or STDERR

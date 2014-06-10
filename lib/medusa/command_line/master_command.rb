@@ -1,7 +1,7 @@
 require 'escort'
 require_relative '../overlord'
 require_relative '../drivers/acceptor'
-require_relative '../listener/log'
+require_relative '../reporters/log'
 
 module Medusa
   class CommandLine
@@ -26,7 +26,7 @@ module Medusa
 
         formatters.collect! do |f|
           case f
-          when "progress" then Medusa::Listener::ProgressBar.new
+          when "progress" then Medusa::Reporters::ProgressBar.new
           when /[a-zA-Z0-9\:]+/ then eval(f).new
           end
         end
@@ -35,7 +35,7 @@ module Medusa
         formatters.uniq!
 
         if formatters.length == 0
-          formatters = [Medusa::Listener::Log.new]
+          formatters = [Medusa::Reporters::Log.new]
         end
 
         formatters
@@ -123,7 +123,7 @@ module Medusa
 
           add_work_from_arguments(overlord)
 
-          overlord.reporters << Medusa::Listener::RSpecStyle.new
+          overlord.reporters << Medusa::Reporters::RSpecStyle.new
 
           overlord.prepare!
           overlord.work!
