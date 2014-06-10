@@ -38,7 +38,7 @@ module Medusa
   # and keeping track of what needs to be done, what has been done, and
   # distributing any results onto the relevant reporters.
   class Overlord
-    attr_reader :keepers, :reporters, :transport, :work, :work_in_progress, :work_complete, :plan
+    attr_reader :keepers, :reporters, :work, :plan
 
     def initialize
       @logger = Medusa.logger.tagged(self.class.name)
@@ -47,29 +47,23 @@ module Medusa
       @work = []
       @work_complete = []
       @work_in_progress = []
-      @results = []
       @reporters = []
       @execution_times = []
 
       @plan = DungeonPlan.new
+      @pool = KeeperPool.new(KEEPER_NAMES)
     end
 
     def prepare!
-      b = Benchmark.measure do
-        @logger.debug("Preparing my underlings")
+      @logger.debug("Preparing my underlings")
 
-        @pool = KeeperPool.new(KEEPER_NAMES)
-
-        @keepers.each do |keeper|
-          @pool.add_keeper(keeper)
-        end
-
-        @pool.prepare!(self)
-
-        @logger.debug("My underlings report they're ready for work")
+      @keepers.each do |keeper|
+        @pool.add_keeper(keeper)
       end
 
-      @execution_times << [:prepare!, b.real]
+      @pool.prepare!(self)
+
+      @logger.debug("My underlings report they're ready for work")
     end
 
     def work!
@@ -86,7 +80,6 @@ module Medusa
     end
 
     def inform_work_result(result)
-      @results << result
       inform_reporters!(:report_work_result, result)
     end
 
@@ -113,13 +106,6 @@ module Medusa
       @logger.debug("Added #{files.flatten.length} files to the workload")
     end
 
-    def handle_message(message, keeper)
-      case message
-      when Messages::RequestFile then send_work_to_keeper(keeper)
-      when Messages::TestResult then record_work_result(message)
-      end
-    end
-
     private
 
     def inform_reporters!(action, *arguments)
@@ -127,21 +113,6 @@ module Medusa
         @logger.debug("Informing reporter #{reporter} of #{action}")
         reporter.send(action.to_sym, *arguments) if reporter.respond_to?(action.to_sym)
       end
-    end
-
-    def send_work_to_keeper(keeper)
-      @logger.debug("Sending work to the keeper")
-
-      file = work.shift
-      keeper.send_message(Messages::RunFile.new(file: file))
-      work_in_progress << file
-    end
-
-    def record_work_result(result)
-      @logger.debug("Received result for file #{result.name}")
-
-      work_in_progress.delete(result.name)
-      work_complete << result.name
     end
 
   end

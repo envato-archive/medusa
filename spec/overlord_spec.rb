@@ -3,6 +3,12 @@ require 'spec_helper'
 describe Medusa::Overlord do
   subject(:overlord) { described_class.new }
 
+  let(:keeper_pool) { double("KeeperPool", accept_work!: true, add_keeper: true, prepare!: true) }
+
+  before do
+    allow(Medusa::KeeperPool).to receive(:new).and_return(keeper_pool)
+  end
+
   after do
     overlord.shutdown!
   end
@@ -17,8 +23,10 @@ describe Medusa::Overlord do
   end
 
   describe "#prepare!" do
-    let(:keeper_1) { double("Keeper", :serve! => true) }
-    let(:keeper_2) { double("Keeper", :serve! => true) }
+    let(:keeper_1) { double("Keeper", :serve! => true, :claim! => true, :name => "Bill") }
+    let(:keeper_2) { double("Keeper", :serve! => true, :claim! => true, :name => "Tony") }
+    let(:dungeon_1) { double("Dungeon", :name => "Melbourne") }
+    let(:dungeon_2) { double("Dungeon", :name => "Sydney") }
 
     it "should start all the keepers" do
       overlord.keepers << keeper_1
@@ -26,13 +34,13 @@ describe Medusa::Overlord do
 
       overlord.prepare!
 
-      expect(keeper_1).to have_received(:serve!).with(overlord, instance_of(String))
-      expect(keeper_2).to have_received(:serve!).with(overlord, instance_of(String))
+      expect(keeper_pool).to have_received(:add_keeper).exactly(2).times
+      expect(keeper_pool).to have_received(:prepare!).with(overlord).once
     end
   end
 
   describe "#work!" do
-    it "allocates work to free keepers" do
+    it "allocates work to pool" do
       keeper_1 = double("Keeper", :free? => false, :work! => true, :working? => false)
       keeper_2 = double("Keeper", :free? => true, :work! => true, :working? => false)
 
@@ -43,9 +51,7 @@ describe Medusa::Overlord do
 
       overlord.work!
 
-      expect(keeper_2).to have_received(:work!).with("file1.rb")
-      expect(keeper_2).to have_received(:work!).with("file2.rb")
-      expect(keeper_1).to have_received(:work!).exactly(0).times
+      expect(keeper_pool).to have_received(:accept_work!).with(["file1.rb", "file2.rb"])
     end
 
     it "waits until keepers have completed their work"
@@ -53,14 +59,14 @@ describe Medusa::Overlord do
 
   describe "#receive_result" do  
     it "distributes the result to reporters" do
-      reporter = double("Reporter", :receive_result => true)
-      some_result = double("Result")
+      reporter = double("Reporter", :message => true)
+      some_message = "Result"
 
       overlord.reporters << reporter
 
-      overlord.receive_result("some_file.rb", some_result)
+      overlord.receive_report(some_message)
 
-      expect(reporter).to have_received(:receive_result).with("some_file.rb", some_result)
+      expect(reporter).to have_received(:message).with(some_message)
     end
   end
 
@@ -71,47 +77,5 @@ describe Medusa::Overlord do
     end
   end
 
-  # context "message handling" do
-  #   let(:client) { DummyKeeperClient.new }
-
-  #   describe Medusa::Messages::RequestFile do
-
-  #     it "provides work when asked" do
-  #       overlord.add_work("file1.rb", "file2.rb")
-
-  #       overlord.handle_message(Medusa::Messages::RequestFile.new, client)
-
-  #       last_message = client.last_message_sent
-
-  #       expect(last_message).to be_a(Medusa::Messages::RunFile)
-  #       expect(last_message.file).to eql "file1.rb"
-  #     end
-
-  #     it "marks a file as being in progress" do
-  #       overlord.add_work("file1.rb", "file2.rb")
-
-  #       overlord.handle_message(Medusa::Messages::RequestFile.new, client)
-
-  #       expect(overlord.work_in_progress).to include("file1.rb")
-  #     end
-
-  #   end
-
-  #   describe Medusa::Messages::TestResult do
-
-  #     before do
-  #       overlord.add_work("file1.rb", "file2.rb")
-  #       overlord.handle_message(Medusa::Messages::RequestFile.new, client)
-  #     end
-
-  #     it "marks a file as complete" do
-  #       overlord.handle_message(Medusa::Messages::TestResult.new(name: "file1.rb"), client)
-
-  #       expect(overlord.work_in_progress).to_not include("file1.rb")
-  #       expect(overlord.work_complete).to include("file1.rb")
-  #     end
-
-  #   end
-  # end
 
 end
