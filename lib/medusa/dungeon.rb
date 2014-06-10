@@ -36,6 +36,11 @@ module Medusa
 
     attr_reader :location, :minions, :name, :keeper
 
+    # Creates a new dungeon with the given number of minions. Note that
+    # minion processes won't be started until the dungeon has been claimed
+    # and then fitted out. Use the #port_start option to control which
+    # port range to use for internal minion communications. You'll want
+    # to use it when running multiple dungeons within a Labrynth.
     def initialize(minions = 3, port_start = 41000)
       @port_start = port_start
       @name = @original_name = "#{DUNGEON_NAMES.sample} #{SecureRandom.random_number(666)}"
@@ -64,6 +69,10 @@ module Medusa
       @logger = Medusa.logger.tagged("#{self.class.name} #{@name}")
     end
 
+    # Fits out the dungeon according to the plan provided in #claim!. This
+    # includes building the dungeon using the DungeonBuilder, and spawning
+    # minions for work, returning their local Union which can be used to
+    # get the little critters working.
     def fit_out!
       raise ArgumentError, "Not claimed" if @keeper.nil?
 
@@ -78,6 +87,7 @@ module Medusa
       !!@keeper
     end
 
+    # Abandon the dungeon, dismantling the union and killing the poor minions.
     def abandon!
       @union.finished
       @name = @original_name
@@ -85,6 +95,7 @@ module Medusa
       @logger.debug("Abandoned by my keeper! Resuming my diminished life as #{@name}.")
     end
 
+    # Reports information to the keeper from the union.
     def report(information)
       @keeper.report(information)
     end

@@ -18,6 +18,10 @@ module Medusa
       @keepers << keeper
     end
 
+    # Instructs all keepers to prepare their dungeon,
+    # and train their minions. All dungeons are 
+    # prepared in parellel, and this method will
+    # block until all dungeons are ready.
     def prepare!(overlord)
       threads = []
 
@@ -59,8 +63,9 @@ module Medusa
       threads.each(&:join)
     end
 
+    # Continually dishes out work to keepers until all work is gone.
+    # Blocks until all work is done.
     def accept_work!(work)
-      # Continually dish out work to keepers until all work is gone.
       while file = work.shift
         @logger.debug("Finding a keeper for #{file}")
 

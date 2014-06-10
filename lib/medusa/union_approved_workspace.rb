@@ -1,6 +1,7 @@
 require 'drb'
 
 require_relative 'parent_termination_watcher'
+require_relative 'ruby_fixes'
 
 module Medusa
 
@@ -17,6 +18,9 @@ module Medusa
       @logger = Medusa.logger.tagged(self.class.name)
     end
 
+    # Embrace a minion into the workspace. Forks the process, and runs the
+    # minion in there. Method calls from the parent process to the minion
+    # are run inside the forked process.
     def embrace(target, reporting_uri)
       @target = target
 
@@ -34,7 +38,8 @@ module Medusa
       end
     end
 
-    # Verifies the connection is alive.
+    # Verifies the connection to the child process running the 
+    # minion server is alive.
     def verify
       tries = 0
 
@@ -60,6 +65,8 @@ module Medusa
       @reporter = nil
     end
 
+    # Forwards method calls onto the minion's server running inside the forked
+    # process from #embrace.
     def method_missing(name, *args)
       client = DRbObject.new(nil, "druby://localhost:#{@port}")
       last_error = nil

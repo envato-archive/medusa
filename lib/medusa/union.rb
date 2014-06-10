@@ -1,6 +1,7 @@
 require 'drb'
 
 require_relative 'union_approved_workspace'
+require_relative 'ruby_fixes'
 
 module Medusa
   # Minions have been abused by their Keepers for Aeons. Recently, they got together
@@ -14,6 +15,8 @@ module Medusa
     include DRbUndumped
 
     class ReportCollector
+      include DRbUndumped
+
       def initialize
         @reports = Queue.new
       end
@@ -53,6 +56,8 @@ module Medusa
       end
     end
 
+    # Accepts a minion into the union, adding them to the
+    # pool of workers.
     def represent(worker)
       @port += 1
 
@@ -61,20 +66,28 @@ module Medusa
       @workers << workspace
     end
 
+    # Verifies the connection to all the minions. Blocks
+    # until we're established they're all verified.
     def wait_for_ready
       @logger.debug("Waiting for workers to be ready")
       @workers.each(&:verify)
       @logger.debug("Workers are ready")
     end
 
+    # Returns true if #delegate is going to find a free minion.
     def can_work?
       @available_workers.length > 0
     end
 
+    # Returns true if any minions are currently working.
     def working?
       @available_workers.length < @workers.length
     end
 
+    # Locates a free minion and makes them run the given activity.
+    # The activity must match a method name on the minion, with the
+    # payload being the method's arguments. Returns true if there
+    # was a free minion, otherwise returns false.
     def delegate(activity, *payload)
       @logger.debug("Checking for free workers from #{@available_workers.length} available worker(s)...")
 
@@ -110,6 +123,8 @@ module Medusa
       end
     end
 
+    # Blocks the current thread until all minions have completed their
+    # work.
     def wait_for_complete
       @logger.debug("Waiting for workers to complete their work - #{@available_workers.length}")
       count = 0
@@ -125,11 +140,15 @@ module Medusa
       @logger.debug("All workers done.")
     end
 
+    # Blocks the current thread until there is a free minion.
     def wait_for_free
       worker = @available_workers.pop
       @available_workers.push(worker)
     end
 
+    # Blocks the current thread until all minions have completed their
+    # work, and then releases the minions, and terminates the reporting
+    # server.
     def finished
       wait_for_complete
       @workers.each(&:release)

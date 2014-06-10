@@ -16,6 +16,7 @@ module Medusa
       @minions = []
     end
 
+    # Instructs a keeper to serve the provided overlord.
     def serve!(overlord, name, plan)
       @overlord = overlord
       @name = name
@@ -25,11 +26,14 @@ module Medusa
       @logger.debug("I serve you my Overlord!")
     end
 
+    # Makes the keeper claim a dungeon, and fit it out.
     def claim!(dungeon)
       @dungeon = dungeon
       @minions_union = @dungeon.fit_out!
     end
 
+    # Abandon a dungeon, making it available for other
+    # keepers to move in.
     def abandon_dungeon!
       @logger.debug("Abandoning dungeon")
 
@@ -38,6 +42,8 @@ module Medusa
       @ambassador = nil
     end
 
+    # Work on a file. Returns true if file was allocated to a minion,
+    # otherwise returns false.
     def work!(file)
       raise ArgumentError, "You must claim a dungeon first" if @minions_union.nil?
       result = @minions_union.delegate(:work!, file)
@@ -45,6 +51,8 @@ module Medusa
       result
     end
 
+    # Reports information back to the overlord. Generally this is called
+    # from by the minion's union upon receiving information from the minion.
     def report(information)
       @logger.debug("Report - #{information}")
       @overlord.receive_report(information)
@@ -57,14 +65,5 @@ module Medusa
     def working?
       @minions_union.working?
     end
-
-    def inform_work_result(result)
-      @overlord.inform_work_result(result)
-    end
-
-    def inform_work_complete(file)
-      @overlord.inform_work_complete(file)
-    end
-
   end
 end

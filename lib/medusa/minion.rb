@@ -5,9 +5,11 @@ require_relative 'minion_trainer'
 require_relative 'drivers/acceptor'
 
 module Medusa
+  # Minions run around inside a dungeon, doing a keeper's bidding. Minions
+  # are represented by a Union, which protects keepers from overloading
+  # minions with work.
   class Minion
     include DRbUndumped
-
     attr_reader :dungeon, :name
 
     def initialize(dungeon, name)
