@@ -5,14 +5,19 @@ In Greek mythology Medusa was a monster, a Gorgon, generally described as having
 
 In modern software development, Medusa, a Gem, is generally described as the most beautiful parallel build system, evar. Running directly upon your servers will turn slow CI cycles to ash. Most sources describe her as the impossible daughter of Hydra, testbot, and test-queue (who says multiple inheritance is bad?).
 
+Design
+======
+
+![Modelling](https://github.com/envato/medusa/raw/master/medusa.jpg)
+
 Goals
 =====
 
-Phase 1 
+Phase 1
 - Clean up inner workings to provide streaming feedback and centralised result format from the master.
 - Tidy the tests to the point that they run without any additional configuration.
 - Worker or Runner errors propogate to master. [done]
- 
+
 Phase 2
 - Separate changes made to work with rails into an easy-to-use setup/generator (bundle local, requiring environment, etc)
 - Running medusa on a new project should be as easy as running rspec. [done]
@@ -143,5 +148,5 @@ NoMoreWork ->
 
                                 (repeats until all runners dead)
 
-                          <-    Died                                
+                          <-    Died
 ```
