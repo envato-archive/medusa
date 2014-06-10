@@ -1,7 +1,7 @@
 module Medusa #:nodoc:
-  module Listener #:nodoc:
+  module Reporters #:nodoc:
     # Output a progress bar as files are completed
-    class Log < Medusa::Listener::Abstract
+    class Log < Medusa::Reporters::Abstract
 
       def initialize(*args)
         @workers = Hash.new
@@ -74,4 +74,3 @@ module Medusa #:nodoc:
     end
   end
 end
-

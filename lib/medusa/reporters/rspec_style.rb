@@ -1,9 +1,9 @@
 module Medusa #:nodoc:
-  module Listener #:nodoc:
-    # Minimal output listener. Outputs all the files at the start
+  module Reporters #:nodoc:
+    # Minimal output reporter. Outputs all the files at the start
     # of testing and outputs a ./F/E per file. As well as
     # full error output, if any.
-    class RSpecStyle < Medusa::Listener::Abstract
+    class RSpecStyle < Medusa::Reporters::Abstract
 
       def initialize(*args)
         super

@@ -1,8 +1,8 @@
 module Medusa
-  module Listener
+  module Reporters
 
     # Output a progress bar as files are completed
-    class ProgressBar < Medusa::Listener::Abstract
+    class ProgressBar < Medusa::Reporters::Abstract
       # Store the total number of files
       def testing_begin(files)
         @total_files = files.size
@@ -35,7 +35,7 @@ module Medusa
 
         @tests_executed += 1
         @fatals += 1 if result.fatal?
-        
+
         render_progress_bar
       end
 

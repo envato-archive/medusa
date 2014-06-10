@@ -1,8 +1,8 @@
 require 'cucumber/formatter/ordered_xml_markup'
 module Medusa #:nodoc:
-  module Listener #:nodoc:
+  module Reporters #:nodoc:
     # Output a textual report at the end of testing
-    class CucumberHtmlReport < Medusa::Listener::Abstract
+    class CucumberHtmlReport < Medusa::Reporters::Abstract
 
       def testing_end
         CombineHtml.new.generate
