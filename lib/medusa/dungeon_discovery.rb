@@ -13,6 +13,10 @@ module Medusa
       @logger = Medusa.logger.tagged(self.class.name)
     end
 
+    def labyrinths_available?
+      @labyrinths.length > 0
+    end
+
     def add_labyrinth(address)
       @labyrinths << ["druby://#{address}", nil]
     end

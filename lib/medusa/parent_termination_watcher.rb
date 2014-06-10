@@ -7,9 +7,19 @@ module Medusa
   # the child's parent ID changes to the init process when the original
   # parent process dies.
   class ParentTerminationWatcher
+    class Terminated < StandardError; end
+    
     def initialize
       @pid = Process.ppid
       @logger = Medusa.logger.tagged(self.class.name)
+    end
+
+    def self.termination_thread!
+      Thread.abort_on_exception = true
+      Thread.new do
+        new.block_until_parent_dead!
+        raise Terminated
+      end
     end
 
     def block_until_parent_dead!

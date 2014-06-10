@@ -6,6 +6,14 @@ require_relative '../reporters/log'
 module Medusa
   class CommandLine
 
+    VERBOSITY_LEVELS = {
+      "DEBUG" => ::Logger::DEBUG,
+      "INFO" => ::Logger::INFO,
+      "WARN" => ::Logger::WARN,
+      "ERROR" => ::Logger::ERROR,
+      "FATAL" => ::Logger::FATAL
+    }
+
     # Handles invocation of a master from the command line.
     class MasterCommand < Escort::ActionCommand::Base
 
@@ -84,14 +92,7 @@ module Medusa
 
           $0 = "[medusa] Overlord running"
 
-          Medusa.logger.level = case command_options[:verbosity]
-          when "INFO" then ::Logger::INFO
-          when "DEBUG" then ::Logger::DEBUG
-          when "WARN" then ::Logger::WARN
-          when "ERROR" then ::Logger::ERROR
-          when "FATAL" then ::Logger::FATAL
-          end
-
+          Medusa.logger.level = VERBOSITY_LEVELS[command_options[:verbosity]]
           Medusa.register_driver Medusa::Drivers::RspecDriver.new
 
           overlord = Medusa::Overlord.new
@@ -107,19 +108,7 @@ module Medusa
 
           # If no labyrinths were specified, create a local one
           # for immediate execution.
-          if command_options[:labyrinths].length == 0
-            addr = "localhost:43553"
-            pid = fork do
-              l = Medusa::Labyrinth.new(addr)
-              l.dungeons << Medusa::Dungeon.new(2)
-              l.serve!
-            end
-
-            # Wait until the Labyrinth has started up.
-            sleep(0.1) until Medusa::Labyrinth.available_at?(addr)
-
-            Medusa.dungeon_discovery.add_labyrinth addr
-          end
+          setup_local_labyrinth unless Medusa.dungeon_discovery.labyrinths_available?
 
           add_work_from_arguments(overlord)
 
@@ -136,6 +125,28 @@ module Medusa
             Process.kill("KILL", pid)
           end
         end
+      end
+
+      private
+
+
+      def setup_local_labyrinth
+        addr = "localhost:43553"
+        pid = fork do
+          begin
+            ParentTerminationWatcher.termination_thread!
+
+            l = Medusa::Labyrinth.new(addr)
+            l.dungeons << Medusa::Dungeon.new(2)
+            l.serve!
+          rescue ParentTerminationWatcher::Terminated
+          end
+        end
+
+        Medusa.dungeon_discovery.add_labyrinth addr
+
+        # Wait until the Labyrinth has started up.
+        sleep(0.1) until Medusa::Labyrinth.available_at?(addr)
       end
 
     end
