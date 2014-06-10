@@ -1,7 +1,7 @@
 if defined?(Medusa::Teamcity::Messenger)
   module Medusa
-    module Listener
-      class Teamcity < Medusa::Listener::Abstract
+    module Reporters
+      class Teamcity < Medusa::Reporters::Abstract
         def initialize(output = $stdout)
           super(output)
           @teamcity_messenger = Medusa::Teamcity::Messenger.new
@@ -30,4 +30,3 @@ if defined?(Medusa::Teamcity::Messenger)
     end
   end
 end
-

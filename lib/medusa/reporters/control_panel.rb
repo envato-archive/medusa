@@ -1,7 +1,7 @@
 module Medusa #:nodoc:
-  module Listener #:nodoc:
+  module Reporters #:nodoc:
     # Output a progress bar as files are completed
-    class ControlPanel < Medusa::Listener::Abstract
+    class ControlPanel < Medusa::Reporters::Abstract
 
       def initialize(*args)
         require 'curses'
@@ -52,7 +52,7 @@ module Medusa #:nodoc:
       def initializer_output(message, worker)
         line = message.output.to_s.split(/[\n\r]/).last
         id = worker.respond_to?(:[]) ? worker[:id] : worker.worker_id
-        
+
         @workers[id] = "#{message.initializer}: #{line}"
         render
       end
@@ -193,4 +193,3 @@ module Medusa #:nodoc:
     end
   end
 end
-

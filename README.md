@@ -8,11 +8,11 @@ In modern software development, Medusa, a Gem, is generally described as the mos
 Goals
 =====
 
-Phase 1 
+Phase 1
 - Clean up inner workings to provide streaming feedback and centralised result format from the master.
 - Tidy the tests to the point that they run without any additional configuration.
 - Worker or Runner errors propogate to master. [done]
- 
+
 Phase 2
 - Separate changes made to work with rails into an easy-to-use setup/generator (bundle local, requiring environment, etc)
 - Running medusa on a new project should be as easy as running rspec. [done]
@@ -53,7 +53,7 @@ Initialization
 
 This phase is started once the master begins setting up workers for execution. The initialization phase covers both pre and post `medusa worker` commands, such as `bundle install`, or reconnecting to a new activerecord database.
 
-Pre initialization messages are not passed from the worker, instead are passed directly from the master's Initialization classes to the Listeners.
+Pre initialization messages are not passed from the worker, instead are passed directly from the master's Initialization classes to the Reporters.
 
 Post initialization messages ARE passed from the worker. See `Medusa::Initializers::Rails` for an example.
 
@@ -143,5 +143,5 @@ NoMoreWork ->
 
                                 (repeats until all runners dead)
 
-                          <-    Died                                
+                          <-    Died
 ```

@@ -1,8 +1,8 @@
 module Medusa #:nodoc:
-  module Listener #:nodoc:
+  module Reporters #:nodoc:
     # Sends a command to Notifier when the testing has finished
     # http://manpages.ubuntu.com/manpages/gutsy/man1/notify-send.1.html
-    class Notifier < Medusa::Listener::Abstract
+    class Notifier < Medusa::Reporters::Abstract
       # output a finished notification
       def testing_end
         icon_path = File.join(
@@ -14,4 +14,3 @@ module Medusa #:nodoc:
     end
   end
 end
-
