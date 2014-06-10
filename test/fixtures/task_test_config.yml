@@ -1,6 +1,0 @@
----
-  workers:
-    - type: ssh
-      connect: localhost
-      directory: /tmp
-      runners: 1
