@@ -47,14 +47,14 @@ module Medusa #:nodoc:
         return
       end
 
-      trace 'Booted.'
+      puts 'Booted.'
 
       @io.write Messages::RequestFile.new
 
       begin
         process_messages
       rescue => ex
-        trace ex.to_s
+        puts ex.to_s
         raise ex
       end
     end
@@ -69,7 +69,7 @@ module Medusa #:nodoc:
     end
 
     def runner_begin
-      trace "Running environment setup"
+      puts "Running environment setup"
       if File.exist?("medusa_runner_init.rb")
         eval(IO.read("medusa_runner_init.rb"))
       end
@@ -77,7 +77,7 @@ module Medusa #:nodoc:
 
     # Run a test file and report the results
     def run_file(file)
-      trace "Running file: #{file}"
+      puts "Running file: #{file}"
 
       $0 = "[medusa] File #{file}"
 
@@ -115,7 +115,12 @@ module Medusa #:nodoc:
     end
 
     def runner_end
+<<<<<<< HEAD
       trace "Ending runner #{self.inspect}"
+=======
+      puts "Ending runner #{self.inspect}"
+      @event_listeners.each {|l| l.runner_end( self ) }
+>>>>>>> origin/master
     end
 
     def format_exception(ex)
@@ -126,21 +131,21 @@ module Medusa #:nodoc:
 
     # The runner will continually read messages and handle them.
     def process_messages
-      trace "Processing Messages"
+      puts "Processing Messages"
       @running = true
       while @running
         begin
           message = @io.gets
           if message
-            trace "Received message from worker"
-            trace "\t#{message.inspect}"
+            puts "Received message from worker"
+            puts "\t#{message.inspect}"
             message.handle_by_runner(self)
           else
-            trace "Ignored message #{message.class}"
+            puts "Ignored message #{message.class}"
             @io.write Messages::Ping.new
           end
         rescue IOError => ex
-          trace "Runner lost Worker"
+          puts "Runner lost Worker"
           stop
         end
       end
@@ -155,10 +160,10 @@ module Medusa #:nodoc:
       begin
         require file
       rescue LoadError => ex
-        trace "#{file} does not exist [#{ex.to_s}]"
+        puts "#{file} does not exist [#{ex.to_s}]"
         return ex.to_s
       rescue Exception => ex
-        trace "Error requiring #{file} [#{ex.to_s}]"
+        puts "Error requiring #{file} [#{ex.to_s}]"
         return format_ex_in_file(file, ex)
       end
 
@@ -201,7 +206,7 @@ module Medusa #:nodoc:
           js_errors.each do |e|
             e = V8::To.rb(e)
             errors << "\n\e[1;31mJSLINT: #{file}\e[0m"
-            errors << "  Error at line #{e['line'].to_i + 1} " + 
+            errors << "  Error at line #{e['line'].to_i + 1} " +
               "character #{e['character'].to_i + 1}: \e[1;33m#{e['reason']}\e[0m"
             errors << "#{e['evidence']}"
           end
@@ -271,4 +276,3 @@ module Medusa #:nodoc:
     end
   end
 end
-
