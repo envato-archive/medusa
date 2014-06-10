@@ -115,12 +115,7 @@ module Medusa #:nodoc:
     end
 
     def runner_end
-<<<<<<< HEAD
-      trace "Ending runner #{self.inspect}"
-=======
       puts "Ending runner #{self.inspect}"
-      @event_listeners.each {|l| l.runner_end( self ) }
->>>>>>> origin/master
     end
 
     def format_exception(ex)
