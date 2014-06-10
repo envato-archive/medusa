@@ -65,30 +65,11 @@ module Medusa
         initializers << Medusa::Initializers::Medusa.new
       end
 
-      def build_workers
-        all_workers = Array(command_options[:workers]).collect do |worker|
-          if worker == "local"
-            { 'type' => 'local', 'runners' => command_options[:runners] }
-          elsif worker =~ /(.*)\@(.*)\/(\d+)/
-            { 'type' => 'ssh', 'connect' => "#{$1}@#{$2}", 'runners' => $3.to_i }
-          elsif worker =~ /(.*)\/(\d+)/
-            { 'type' => 'ssh', 'connect' => "#{$1}", 'runners' => $2.to_i }
-          elsif worker =~ /(.*)\@(.*)/
-            { 'type' => 'ssh', 'connect' => "#{$1}@#{$2}", 'runners' => command_options[:runners] }
-          end
-        end
-
-        all_workers = [{ 'type' => 'local', 'runners' => command_options[:runners] }] if all_workers.empty?
-        return all_workers
-      end
-
       def execute
         begin
+          # TODO - Restore formatter and initializer construction.
           # formatters = build_formatters
-          # files = find_files_from_arguments
           # initializers = build_initializers
-          # workers = build_workers
-          # root = `pwd`.chomp
 
           $0 = "[medusa] Overlord running"
 
