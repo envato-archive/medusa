@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "net-ssh"
 
   spec.add_development_dependency "rspec", "~> 2.14"
-  # spec.add_development_dependency "rake"
+  spec.add_development_dependency "rake"
   # spec.add_development_dependency "shoulda", "~> 2.10.3"
   # spec.add_development_dependency "rspec"
   # spec.add_development_dependency "cucumber"
