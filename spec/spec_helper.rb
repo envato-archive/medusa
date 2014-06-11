@@ -13,6 +13,10 @@ RSpec.configure do |config|
   # the seed, which is printed after each run.
   #     --seed 1234
   config.order = 'random'
+
+  config.before(:each) do
+    Medusa.remove_registered_drivers!
+  end
 end
 
 # Setup logging into log/test.log

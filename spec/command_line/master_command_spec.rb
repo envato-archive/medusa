@@ -11,13 +11,6 @@ describe Medusa::CommandLine::MasterCommand do
       Medusa::Overlord.new
     end
 
-    it "provides the files to an Overlord" do
-      allow(Medusa::Overlord).to receive(:new).and_return(overlord)
-      allow(overlord).to receive(:prepare!)
-
-      command.execute
-
-      overlord.work.should == [__FILE__]
-    end
+    it "provides the files to an Overlord"
   end
 end
