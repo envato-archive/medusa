@@ -12,7 +12,7 @@ module Medusa
 
       def execute(file, reporter)
         require 'rspec'
-        require 'medusa/spec/medusa_formatter'
+        require 'medusa/drivers/spec/medusa_formatter'
 
         pid = fork do
           $0 = "[medusa] RSpec Driver - #{file}"
@@ -32,12 +32,7 @@ module Medusa
           RSpec.world = RSpec::Core::World.new
 
           # If there's some kind of terminal error on the parent, shutdown the child.
-          Thread.abort_on_exception = true
-          Thread.new do
-            watcher = ParentTerminationWatcher.new
-            watcher.block_until_parent_dead!
-            raise RuntimeError
-          end
+          ParentTerminationWatcher.termination_thread!
 
           begin
             RSpec::Core::Formatters::MedusaFormatter.with_stdout do
