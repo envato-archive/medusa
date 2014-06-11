@@ -5,6 +5,7 @@ require 'medusa/version'
 
 require 'medusa/overlord'
 require 'medusa/labyrinth'
+require 'medusa/tmpfile'
 
 require 'medusa/message'
 require 'medusa/messages/died'

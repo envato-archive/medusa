@@ -13,8 +13,7 @@ module Medusa
   # DRb communication between the parent and child processes. One for the
   # minion's commands, and one for reporting back to the Union their results.
   class UnionApprovedWorkspace
-    def initialize(port)
-      @port = port
+    def initialize
       @logger = Medusa.logger.tagged(self.class.name)
     end
 
@@ -23,6 +22,7 @@ module Medusa
     # are run inside the forked process.
     def embrace(target, reporting_uri)
       @target = target
+      @socket = Medusa.tmpfile
 
       @pid = fork do
         $0 = "[medusa] #{target.class.name} #{target.name}"
@@ -30,11 +30,22 @@ module Medusa
         terminator = ParentTerminationWatcher.new
 
         reporting_client = DRbObject.new(nil, reporting_uri)
-        target.report_to(reporting_client)
 
-        server = DRb::DRbServer.new("druby://localhost:#{@port}", target)
+        begin
+          if reporting_client.respond_to?(:report)
+            target.report_to(reporting_client)
+          else
+            raise ArgumentError, "Reporting URI doesn't expose a report method"
+          end
+        rescue DRb::DRbConnError
+          raise ArgumentError, "Reporting URI call error"
+        end
+
+        server = DRb::DRbServer.new("drbunix://#{@socket}", target)
 
         terminator.block_until_parent_dead!
+
+        File.unlink(@socket)
       end
     end
 
@@ -44,18 +55,20 @@ module Medusa
       tries = 0
 
       begin
-        @logger.debug("Checking connection to #{@port}...")
-        object = DRbObject.new(nil, "druby://localhost:#{@port}")
+        @logger.debug("Checking connection to #{@socket}...")
+        object = DRbObject.new(nil, "drbunix://#{@socket}")
         object.to_s
         true
       rescue Errno::ECONNREFUSED, DRb::DRbConnError
-        @logger.debug("Retrying connection to #{@port}...")
-        raise "Couldn't establish workspace connection to #{@port}" if tries > 10
+        @logger.debug("Retrying connection to #{@socket}...")
+        raise "Couldn't establish workspace connection to #{@socket}" if tries > 10
 
         tries += 1
         sleep(0.1)
         retry
       end
+
+      @logger.info("Verified connection to #{@socket}")
     end
 
     def release
@@ -68,7 +81,7 @@ module Medusa
     # Forwards method calls onto the minion's server running inside the forked
     # process from #embrace.
     def method_missing(name, *args)
-      client = DRbObject.new(nil, "druby://localhost:#{@port}")
+      client = DRbObject.new(nil, "drbunix://#{@socket}")
       last_error = nil
 
       work_thread = Thread.new do
