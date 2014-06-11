@@ -31,14 +31,13 @@ module Medusa
       end
     end
 
-    def initialize(reporter, port = 10000)
+    def initialize(reporter)
       @workers ||= []
       @reporter = reporter
       @internal_reporter = ReportCollector.new
-      @port = port
       @logger = Medusa.logger.tagged(self.class.name)
 
-      reporting_server_socket = Medusa.tmpfile
+      reporting_server_socket = Medusa.tmpfile("reporting")
       @logger.info("Setting up reporting server at #{reporting_server_socket}")
 
       @reporting_server = DRb::DRbServer.new("drbunix://#{reporting_server_socket}", @internal_reporter)
@@ -63,8 +62,6 @@ module Medusa
     # Accepts a minion into the union, adding them to the
     # pool of workers.
     def represent(worker)
-      @port += 1
-
       workspace = UnionApprovedWorkspace.new
       workspace.embrace(worker, @reporting_server.uri)
       @workers << workspace

@@ -41,8 +41,7 @@ module Medusa
     # and then fitted out. Use the #port_start option to control which
     # port range to use for internal minion communications. You'll want
     # to use it when running multiple dungeons within a Labyrinth.
-    def initialize(minions = 3, port_start = 41000)
-      @port_start = port_start
+    def initialize(minions = 3)
       @name = @original_name = "#{DUNGEON_NAMES.sample} #{SecureRandom.random_number(666)}"
       @logger = Medusa.logger.tagged("#{self.class.name} #{@name}")
 
@@ -110,7 +109,7 @@ module Medusa
     def spawn_minions
       @logger.debug("Spawning #{@number_of_minions} minions...")
 
-      @union = Union.new(self, @port_start)
+      @union = Union.new(self)
 
       @number_of_minions.times do |minion_name|
         minion = Minion.new(self, minion_name)

@@ -22,7 +22,7 @@ module Medusa
     # are run inside the forked process.
     def embrace(target, reporting_uri)
       @target = target
-      @socket = Medusa.tmpfile
+      @socket = Medusa.tmpfile("uaw")
 
       @pid = fork do
         $0 = "[medusa] #{target.class.name} #{target.name}"
@@ -76,6 +76,7 @@ module Medusa
       @pid = nil
       @target = nil
       @reporter = nil
+      File.unlink(@socket)
     end
 
     # Forwards method calls onto the minion's server running inside the forked
