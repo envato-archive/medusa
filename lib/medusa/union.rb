@@ -1,4 +1,5 @@
 require 'drb'
+require 'tmpdir'
 
 require_relative 'union_approved_workspace'
 require_relative 'ruby_fixes'
@@ -30,14 +31,16 @@ module Medusa
       end
     end
 
-    def initialize(reporter, port = 10000)
+    def initialize(reporter)
       @workers ||= []
       @reporter = reporter
       @internal_reporter = ReportCollector.new
-      @port = port
       @logger = Medusa.logger.tagged(self.class.name)
 
-      @reporting_server = DRb::DRbServer.new("druby://localhost:#{port}", @internal_reporter)
+      reporting_server_socket = Medusa.tmpfile("reporting")
+      @logger.info("Setting up reporting server at #{reporting_server_socket}")
+
+      @reporting_server = DRb::DRbServer.new("drbunix://#{reporting_server_socket}", @internal_reporter)
 
       @available_workers = Queue.new
 
@@ -59,9 +62,7 @@ module Medusa
     # Accepts a minion into the union, adding them to the
     # pool of workers.
     def represent(worker)
-      @port += 1
-
-      workspace = UnionApprovedWorkspace.new(@port)
+      workspace = UnionApprovedWorkspace.new
       workspace.embrace(worker, @reporting_server.uri)
       @workers << workspace
     end

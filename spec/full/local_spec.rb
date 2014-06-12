@@ -25,20 +25,20 @@ describe "Local execution" do
   let(:spec_file) { Pathname.new(__FILE__).dirname.join("../fixtures/sample_spec.rb").to_s }
 
   it "runs the spec files correctly" do
-    port_start = 18100
+    labyrinth_port = 18000 + rand(10000)
 
     begin
       labyrinth_pid = fork do
         Medusa.register_driver Medusa::Drivers::RspecDriver.new
 
-        labyrinth = Medusa::Labyrinth.new("localhost:#{port_start}")
-        labyrinth.dungeons << Medusa::Dungeon.new(2, 41010)
+        labyrinth = Medusa::Labyrinth.new("localhost:#{labyrinth_port}")
+        labyrinth.dungeons << Medusa::Dungeon.new(2)
         labyrinth.serve!
       end
 
-      sleep(0.1) until Medusa::Labyrinth.available_at?("localhost:#{port_start}")
+      sleep(0.1) until Medusa::Labyrinth.available_at?("localhost:#{labyrinth_port}")
 
-      Medusa.dungeon_discovery.add_labyrinth("localhost:#{port_start}")
+      Medusa.dungeon_discovery.add_labyrinth("localhost:#{labyrinth_port}")
 
       reporter = TestResultCapture.new
 
