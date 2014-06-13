@@ -4,7 +4,7 @@ require_relative '../lib/medusa/keeper'
 
 describe Medusa::Keeper do
   subject(:keeper) { described_class.new }
-  let(:overlord) { double("Overlord") }
+  let(:overlord) { double("Overlord", receive_report: nil) }
   let(:dungeon) { double("Dungeon", fit_out!: union) }
   let(:union) { double("Union") }
   let(:plan) { Medusa::DungeonPlan.new }
@@ -33,14 +33,6 @@ describe Medusa::Keeper do
     end
   end
 
-  describe "#fit_out!" do
-    it "should construct the dungeon" do
-    end
-
-    it "should provide access to the minions union" do
-    end
-  end
-
   describe "#work!" do
     let(:union) { double("Union", :delegate => true) }
     let(:dungeon) { double("Dungeon", :fit_out! => union) }
@@ -65,11 +57,12 @@ describe Medusa::Keeper do
     end
   end
 
-  describe "#inform_work_complete" do
-    it "informs the overlord"
-  end
+  describe "#report" do
+    it "reports information up to the overlord" do
+      keeper.serve!(overlord, "Billy", [])
+      keeper.report("Some report")
 
-  describe "#inform_work_result" do
-    it "informs the overlord"
+      expect(overlord).to have_received(:receive_report).with("Some report")
+    end
   end
 end

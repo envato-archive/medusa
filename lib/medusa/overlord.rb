@@ -74,9 +74,6 @@ module Medusa
       @pool.accept_work!(@work)
 
       inform_reporters!(:report_all_work_completed)
-
-      @results.freeze
-      @results
     end
 
     def inform_work_result(result)

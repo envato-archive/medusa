@@ -54,7 +54,6 @@ module Medusa
     # Reports information back to the overlord. Generally this is called
     # from by the minion's union upon receiving information from the minion.
     def report(information)
-      @logger.debug("Report - #{information}")
       @overlord.receive_report(information)
     end
 

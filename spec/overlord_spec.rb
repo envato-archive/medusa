@@ -53,11 +53,9 @@ describe Medusa::Overlord do
 
       expect(keeper_pool).to have_received(:accept_work!).with(["file1.rb", "file2.rb"])
     end
-
-    it "waits until keepers have completed their work"
   end
 
-  describe "#receive_result" do  
+  describe "#receive_result" do
     it "distributes the result to reporters" do
       reporter = double("Reporter", :message => true)
       some_message = "Result"
