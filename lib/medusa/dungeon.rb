@@ -47,7 +47,7 @@ module Medusa
 
       @number_of_minions = minions
 
-      safe_name = @name.scan(/[\w\d]+/).join("-").gsub(/-{2,}/, '-')
+      safe_name = @name.scan(/[\w\d]+/).join("-").gsub(/-{2,}/, '-').downcase
       @location = Pathname.new("/tmp/medusa/dungeons/#{safe_name}")
     end
 
@@ -76,10 +76,17 @@ module Medusa
       raise ArgumentError, "Not claimed" if @keeper.nil?
 
       @logger.debug("Fitting out the Dungeon.")
+
       build_dungeon
       spawn_minions
 
       return @union
+    end
+
+    def write_file!(name, data)
+      @logger.debug("Added file #{name}")
+      FileUtils.mkdir_p(@location.join(name).dirname.to_s)
+      File.open(@location.join(name).to_s, "w") { |f| f.write data }
     end
 
     def claimed?
@@ -91,7 +98,8 @@ module Medusa
       @union.finished
       @name = @original_name
       @keeper = nil
-      @logger.debug("Abandoned by my keeper! Resuming my diminished life as #{@name}.")
+      @logger.info("Abandoned by my keeper! Resuming my diminished life as #{@name}.")
+      FileUtils.rm_rf(@location.to_s)
     end
 
     # Reports information to the keeper from the union.
@@ -102,7 +110,7 @@ module Medusa
     private
 
     def build_dungeon
-      @logger.debug("Preparing dungeon... #{@dungeon_blueprints.inspect}")
+      @logger.info("Preparing dungeon...")
       DungeonConstructor.build!(self, @dungeon_blueprints)
     end
 

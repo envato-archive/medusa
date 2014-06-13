@@ -54,7 +54,9 @@ module Medusa
     def work!(file)
       raise ArgumentError, "Already working" if @current_work
 
-      @logger.debug("Yessss master! Working on #{file}!")
+      file = @dungeon.location.join(file).to_s
+
+      @logger.info("Yessss master! Working on #{file}!")
 
       if driver = Drivers::Acceptor.accept?(file)
         begin

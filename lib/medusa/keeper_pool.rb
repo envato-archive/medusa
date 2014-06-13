@@ -1,4 +1,6 @@
 
+require_relative 'initializers/dumb_sync'
+
 Thread.abort_on_exception=true
 
 module Medusa
@@ -61,6 +63,8 @@ module Medusa
       end
 
       threads.each(&:join)
+
+      DumbSync.new.execute!(@keepers)
     end
 
     # Continually dishes out work to keepers until all work is gone.

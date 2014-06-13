@@ -51,6 +51,11 @@ module Medusa
       result
     end
 
+    def write_file!(file, data)
+      @logger.info("Write file #{file} to #{@dungeon.inspect}")
+      @dungeon.write_file!(file, data)
+    end
+
     # Reports information back to the overlord. Generally this is called
     # from by the minion's union upon receiving information from the minion.
     def report(information)

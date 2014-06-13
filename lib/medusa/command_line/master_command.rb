@@ -77,7 +77,6 @@ module Medusa
           Medusa.register_driver Medusa::Drivers::RspecDriver.new
 
           overlord = Medusa::Overlord.new
-          overlord.keepers << Medusa::Keeper.new
 
           # Add any remote labyrinths if specified.
           command_options[:labyrinths].each do |addr|
@@ -89,7 +88,7 @@ module Medusa
 
           # If no labyrinths were specified, create a local one
           # for immediate execution.
-          setup_local_labyrinth unless Medusa.dungeon_discovery.labyrinths_available?
+          # setup_local_labyrinth unless Medusa.dungeon_discovery.labyrinths_available?
 
           add_work_from_arguments(overlord)
 
