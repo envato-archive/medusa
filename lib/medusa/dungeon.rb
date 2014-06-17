@@ -83,10 +83,10 @@ module Medusa
       return @union
     end
 
-    def write_file!(name, data)
-      @logger.debug("Added file #{name}")
-      FileUtils.mkdir_p(@location.join(name).dirname.to_s)
-      File.open(@location.join(name).to_s, "w") { |f| f.write data }
+    # Executes a build command on the dungeon. Optionally takes a provider
+    # which the command can use to ask for additional information.
+    def build!(command, provider = nil)
+      command.execute(self, provider)
     end
 
     def claimed?
@@ -99,7 +99,7 @@ module Medusa
       @name = @original_name
       @keeper = nil
       @logger.info("Abandoned by my keeper! Resuming my diminished life as #{@name}.")
-      FileUtils.rm_rf(@location.to_s)
+      # FileUtils.rm_rf(@location.to_s)
     end
 
     # Reports information to the keeper from the union.

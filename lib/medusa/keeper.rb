@@ -29,6 +29,11 @@ module Medusa
     # Makes the keeper claim a dungeon, and fit it out.
     def claim!(dungeon)
       @dungeon = dungeon
+
+      @plan.blueprints.each do |blueprint|
+        blueprint.execute(self, dungeon)
+      end
+
       @minions_union = @dungeon.fit_out!
     end
 
@@ -51,6 +56,7 @@ module Medusa
       result
     end
 
+    # Writes a file into the keeper's dungeon.
     def write_file!(file, data)
       @logger.info("Write file #{file} to #{@dungeon.inspect}")
       @dungeon.write_file!(file, data)

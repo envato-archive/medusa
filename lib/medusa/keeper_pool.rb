@@ -21,7 +21,7 @@ module Medusa
     end
 
     # Instructs all keepers to prepare their dungeon,
-    # and train their minions. All dungeons are 
+    # and train their minions. All dungeons are
     # prepared in parellel, and this method will
     # block until all dungeons are ready.
     def prepare!(overlord)
@@ -63,8 +63,6 @@ module Medusa
       end
 
       threads.each(&:join)
-
-      DumbSync.new.execute!(@keepers)
     end
 
     # Continually dishes out work to keepers until all work is gone.

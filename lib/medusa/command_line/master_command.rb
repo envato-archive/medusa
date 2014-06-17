@@ -88,7 +88,7 @@ module Medusa
 
           # If no labyrinths were specified, create a local one
           # for immediate execution.
-          # setup_local_labyrinth unless Medusa.dungeon_discovery.labyrinths_available?
+          setup_local_labyrinth(overlord) unless Medusa.dungeon_discovery.labyrinths_available?
 
           add_work_from_arguments(overlord)
 
@@ -110,7 +110,7 @@ module Medusa
       private
 
 
-      def setup_local_labyrinth
+      def setup_local_labyrinth(overlord)
         addr = "localhost:43553"
         pid = fork do
           begin
@@ -127,6 +127,8 @@ module Medusa
 
         # Wait until the Labyrinth has started up.
         sleep(0.1) until Medusa::Labyrinth.available_at?(addr)
+
+        overlord.keepers << Medusa::Keeper.new
       end
 
     end
