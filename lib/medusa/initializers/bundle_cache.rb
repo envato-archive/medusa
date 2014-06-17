@@ -16,7 +16,9 @@ module Medusa
           require 'bundler'
           Bundler.require
 
+          ::Medusa.logger.tagged(self.class.name).info("Bundle loaded")
         rescue => ex
+          ::Medusa.logger.tagged(self.class.name).error("Bundle load error")
           ::Medusa.logger.tagged(self.class.name).error(ex.to_s)
           ::Medusa.logger.tagged(self.class.name).error(ex.backtrace)
           raise

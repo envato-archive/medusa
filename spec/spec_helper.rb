@@ -1,4 +1,4 @@
-
+require 'rspec'
 require_relative '../lib/medusa'
 
 Dir.glob(Pathname.new(__FILE__).dirname.join("support/*.rb")).each { |f| require f }
