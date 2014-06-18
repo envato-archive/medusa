@@ -1,5 +1,5 @@
 module Medusa
-  module Initializers
+  module Blueprints
 
     # Loads up the spec helper file is it's available.
     class SpecHelper

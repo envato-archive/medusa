@@ -94,9 +94,9 @@ module Medusa
 
           overlord.reporters << Medusa::Reporters::RSpecStyle.new
 
-          overlord.plan.blueprints << Initializers::DumbSync.new
-          overlord.plan.blueprints << Initializers::BundleCache.new
-          overlord.plan.blueprints << Initializers::SpecHelper.new
+          overlord.plan.blueprints << Blueprints::DumbSync.new
+          overlord.plan.blueprints << Blueprints::BundleCache.new
+          overlord.plan.blueprints << Blueprints::SpecHelper.new
 
           overlord.prepare!
           overlord.work!

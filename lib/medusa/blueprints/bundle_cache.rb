@@ -1,5 +1,5 @@
 module Medusa
-  module Initializers
+  module Blueprints
     class BundleCache
 
       # This command runs within the dungeon process, installing the bundle and then

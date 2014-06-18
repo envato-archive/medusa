@@ -1,5 +1,5 @@
 module Medusa
-  module Initializers
+  module Blueprints
 
     # Basic file synchronisation, copies files from the Keeper over to the Dungeon.
     class DumbSync

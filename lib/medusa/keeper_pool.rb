@@ -1,6 +1,4 @@
 
-require_relative 'initializers/dumb_sync'
-
 Thread.abort_on_exception=true
 
 module Medusa
