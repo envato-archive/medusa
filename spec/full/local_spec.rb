@@ -1,26 +1,6 @@
 require 'spec_helper'
 require 'pathname'
 
-class TestResultCapture
-  attr_reader :results
-
-  def initialize
-    @results = []
-  end
-
-  def report_work_result(result)
-    @results << [:work_result, result.name, result.success?, result]
-  end
-
-  def report_work_complete(file)
-    @results << [:file_complete, file]
-  end
-
-  def message(string)
-    @results << string
-  end
-end
-
 describe "Local execution" do
   let(:spec_file) { Pathname.new(__FILE__).dirname.join("../fixtures/sample_spec.rb").to_s }
 
@@ -40,7 +20,7 @@ describe "Local execution" do
 
       Medusa.dungeon_discovery.add_labyrinth("localhost:#{labyrinth_port}")
 
-      reporter = TestResultCapture.new
+      reporter = TestListener.new
 
       overlord = Medusa::Overlord.new
       overlord.keepers << Medusa::Keeper.new

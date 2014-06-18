@@ -52,27 +52,32 @@ module Medusa
     end
 
     def work!(file)
-      raise ArgumentError, "Already working" if @current_work
+      @logger.debug("Got #{file}")
 
-      file = @dungeon.location.join(file).to_s
-
-      @logger.info("Yessss master! Working on #{file}!")
-
-      if driver = Drivers::Acceptor.accept?(file)
-        begin
-          driver.execute(file, @reporter)
-        rescue Object => ex
-          @logger.error("I could not do what you ask master!")
-          @logger.error(ex.to_s)
-          @reporter.report(Messages::TestResult.fatal_error(file, ex))
-        ensure
-          @logger.debug("Reporting work complete")
-          @current_file = nil
-          @reporter.report(Messages::FileComplete.new(file: file))
-        end
-      else
-        @logger.error("I cannot work on #{file} - there's no driver for it.")
+      if @current_work
+        @logger.error("I'm already working")
+        raise ArgumentError, "Already working"
       end
+
+      begin
+        file = @dungeon.location.join(file).to_s
+
+        @logger.info("Yessss master! Working on #{file}!")
+
+        if driver = Drivers::Acceptor.accept?(file)
+          driver.execute(file, @reporter)
+        else
+          @logger.error("I cannot work on #{file} - there's no driver for it.")
+        end
+      rescue Object => ex
+        @logger.error("I could not do what you ask master!")
+        @logger.error(ex.to_s)
+        @reporter.report(Messages::TestResult.fatal_error(file, ex))
+      ensure
+        @logger.debug("Reporting work complete")
+        @current_file = nil
+        @reporter.report(Messages::FileComplete.new(file: file))
+      end        
     end
 
     def die!

@@ -22,6 +22,10 @@ describe Medusa::Keeper do
   end
 
   describe "#claim!" do
+    before do
+      keeper.serve!(overlord, "Barry")
+    end
+
     it "fit outs the dungeon" do
       keeper.claim!(dungeon)
       expect(dungeon).to have_received(:fit_out!)
@@ -38,6 +42,7 @@ describe Medusa::Keeper do
     let(:dungeon) { double("Dungeon", :fit_out! => union) }
 
     before do
+      keeper.serve!(overlord, "Barry")
       keeper.claim!(dungeon)
     end
 

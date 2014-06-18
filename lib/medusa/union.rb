@@ -42,6 +42,11 @@ module Medusa
 
       @reporting_server = DRb::DRbServer.new("drbunix://#{reporting_server_socket}", @internal_reporter)
 
+      Thread.new do
+        @reporting_server.thread.join
+        @logger.debug("Reporting server terminated")
+      end
+
       @available_workers = Queue.new
 
       # The reporting thread collects reports received on the server
@@ -101,11 +106,12 @@ module Medusa
         begin
           @logger.debug("Delegating #{activity} to worker")
           worker.send(activity, *payload)
+          @logger.debug("Worker has finished their job")
         rescue => ex
-          @logger.error("ERROR - #{ex.to_s}")
+          @logger.error("Error with worker - #{ex.to_s}")
+          @logger.error(ex.backtrace.join("\n"))
         ensure
           @available_workers.push(worker)
-          @logger.debug("Worker has finished their job")
         end
       end
 

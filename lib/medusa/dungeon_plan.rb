@@ -15,7 +15,7 @@ module Medusa
     attr_reader :minion_training
 
     def initialize
-      @blueprints = [Initializers::DumbSync.new, Initializers::BundleCache.new, Initializers::SpecHelper.new]
+      @blueprints = []
       @minion_training = []
     end
 
