@@ -1,6 +1,5 @@
 require 'benchmark'
 require_relative 'logger'
-require_relative 'keepers/local_client'
 require_relative 'messages/request_file'
 require_relative 'messages/test_result'
 require_relative 'messages/run_file'
