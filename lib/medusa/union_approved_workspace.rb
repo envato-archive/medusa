@@ -25,27 +25,31 @@ module Medusa
       @socket = Medusa.tmpfile("uaw")
 
       @pid = fork do
-        $0 = "[medusa] #{target.class.name} #{target.name}"
-
-        terminator = ParentTerminationWatcher.new
-
-        reporting_client = DRbObject.new(nil, reporting_uri)
-
         begin
-          if reporting_client.respond_to?(:report)
-            target.report_to(reporting_client)
-          else
-            raise ArgumentError, "Reporting URI doesn't expose a report method"
+          $0 = "[medusa] #{target.class.name} #{target.name}"
+
+          terminator = ParentTerminationWatcher.new
+
+          reporting_client = DRbObject.new(nil, reporting_uri)
+
+          begin
+            if reporting_client.respond_to?(:report)
+              target.report_to(reporting_client)
+            else
+              raise ArgumentError, "Reporting URI doesn't expose a report method"
+            end
+          rescue DRb::DRbConnError
+            raise ArgumentError, "Reporting URI call error"
           end
-        rescue DRb::DRbConnError
-          raise ArgumentError, "Reporting URI call error"
+
+          server = DRb::DRbServer.new("drbunix://#{@socket}", target)
+
+          terminator.block_until_parent_dead! { server.alive? }
+
+          @logger.debug("Terminating minion process")
+        ensure
+          File.unlink(@socket)
         end
-
-        server = DRb::DRbServer.new("drbunix://#{@socket}", target)
-
-        terminator.block_until_parent_dead!
-
-        File.unlink(@socket)
       end
     end
 
@@ -53,11 +57,12 @@ module Medusa
     # minion server is alive.
     def verify
       tries = 0
+      name = ""
 
       begin
         @logger.debug("Checking connection to #{@socket}...")
         object = DRbObject.new(nil, "drbunix://#{@socket}")
-        object.to_s
+        name = object.name
         true
       rescue Errno::ECONNREFUSED, DRb::DRbConnError
         @logger.debug("Retrying connection to #{@socket}...")
@@ -68,10 +73,11 @@ module Medusa
         retry
       end
 
-      @logger.info("Verified connection to #{@socket}")
+      @logger.info("Verified connection to minion #{name}")
     end
 
     def release
+      @logger.debug("Releasing my minion")
       Process.kill("KILL", @pid) if @pid
       @pid = nil
       @target = nil
@@ -82,11 +88,12 @@ module Medusa
     # Forwards method calls onto the minion's server running inside the forked
     # process from #embrace.
     def method_missing(name, *args)
-      client = DRbObject.new(nil, "drbunix://#{@socket}")
+      @logger.info("Executing #{name} on #{@socket} #{File.exist?(@socket)}")
       last_error = nil
 
       work_thread = Thread.new do
         begin
+          client = DRbObject.new(nil, "drbunix://#{@socket}")
           client.send(name, *args)
         rescue => ex
           last_error = ex

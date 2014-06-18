@@ -17,10 +17,10 @@ module Medusa
     end
 
     # Instructs a keeper to serve the provided overlord.
-    def serve!(overlord, name, plan)
+    def serve!(overlord, name, plan = nil)
       @overlord = overlord
       @name = name
-      @plan = plan
+      @plan = plan || DungeonPlan.new
       @logger = Medusa.logger.tagged("#{self.class.name} - #{name}")
 
       @logger.debug("I serve you my Overlord!")
@@ -29,6 +29,11 @@ module Medusa
     # Makes the keeper claim a dungeon, and fit it out.
     def claim!(dungeon)
       @dungeon = dungeon
+
+      @plan.blueprints.each do |blueprint|
+        blueprint.execute(self, dungeon)
+      end
+
       @minions_union = @dungeon.fit_out!
     end
 

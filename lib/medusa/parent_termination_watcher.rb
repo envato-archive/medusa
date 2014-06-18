@@ -24,7 +24,7 @@ module Medusa
 
     def block_until_parent_dead!
       watcher_thread = Thread.new do
-        while @pid == Process.ppid
+        while @pid == Process.ppid && (!block_given? || (block_given? && yield))
           sleep(0.1)
         end
       end

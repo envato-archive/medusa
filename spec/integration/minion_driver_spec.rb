@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe "Minion and Driver" do
-  let(:dungeon) { double("Dungeon", name: "Something") }
+  let(:dungeon) { double("Dungeon", name: "Something", location: Pathname.new("/tmp/medusa-test")) }
   let(:keeper) { double("Keeper", name: "Something") }
   let(:reporter) { double("Reporter", report: true) }
 
