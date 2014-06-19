@@ -5,6 +5,7 @@ require_relative 'dungeon_constructor'
 require_relative 'logger'
 require_relative 'minion'
 require_relative 'union'
+require_relative 'dungeons/dungeon_of_ruby'
 
 module Medusa
 
@@ -34,21 +35,22 @@ module Medusa
     include DRbUndumped
     ALPHABET = ('a'..'z').to_a
 
-    attr_reader :location, :minions, :name, :keeper
+    attr_reader :location, :minions, :name, :keeper, :client
 
     # Creates a new dungeon with the given number of minions. Note that
     # minion processes won't be started until the dungeon has been claimed
     # and then fitted out. Use the #port_start option to control which
     # port range to use for internal minion communications. You'll want
     # to use it when running multiple dungeons within a Labyrinth.
-    def initialize(minions = 3)
+    def initialize(minions = 3, options = {})
       @name = @original_name = "#{DUNGEON_NAMES.sample} #{SecureRandom.random_number(666)}"
       @logger = Medusa.logger.tagged("#{self.class.name} #{@name}")
 
       @number_of_minions = minions
 
-      safe_name = @name.scan(/[\w\d]+/).join("-").gsub(/-{2,}/, '-').downcase
-      @location = Pathname.new("/tmp/medusa/dungeons/#{safe_name}")
+      safe_name = options[:location] || @name.scan(/[\w\d]+/).join("-").gsub(/-{2,}/, '-').downcase
+      @location = Pathname.new("/tmp/medusa/dungeons/#{safe_name}").expand_path
+      @logger.info("Path is #{@location}")
     end
 
     # A keeper will claim the dungeon and spawn
@@ -66,6 +68,10 @@ module Medusa
       @logger.debug("Claimed by a keeper! Henceforth I will be known as #{@name}.")
       @logger.debug("blueprints are #{@dungeon_blueprints.inspect}")
       @logger = Medusa.logger.tagged("#{self.class.name} #{@name}")
+
+      FileUtils.mkdir_p(location.to_s)
+
+      @client = Dungeons::DungeonOfRuby.create(name, location)
     end
 
     # Fits out the dungeon according to the plan provided in #claim!. This
@@ -77,8 +83,10 @@ module Medusa
 
       @logger.debug("Fitting out the Dungeon.")
 
-      build_dungeon
-      spawn_minions
+      @union = @client.spawn_minions(@number_of_minions)
+
+      # build_dungeon
+      # spawn_minions
 
       return @union
     end
@@ -86,7 +94,7 @@ module Medusa
     # Executes a build command on the dungeon. Optionally takes a provider
     # which the command can use to ask for additional information.
     def build!(command, provider = nil)
-      command.execute(self, provider)
+      command.execute(@client, provider)
     end
 
     def claimed?
@@ -95,7 +103,7 @@ module Medusa
 
     # Abandon the dungeon, dismantling the union and killing the poor minions.
     def abandon!
-      @union.finished
+      @client.die! if @client
       @name = @original_name
       @keeper = nil
       @logger.info("Abandoned by my keeper! Resuming my diminished life as #{@name}.")
@@ -111,6 +119,7 @@ module Medusa
 
     def build_dungeon
       @logger.info("Preparing dungeon...")
+
       DungeonConstructor.build!(self, @dungeon_blueprints)
     end
 
@@ -129,3 +138,4 @@ module Medusa
     end
   end
 end
+

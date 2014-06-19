@@ -10,6 +10,10 @@ module Medusa #:nodoc:
         @failures = []
       end
 
+      def report_construction_information(message)
+        @output.write("#{message.phase} - #{message.output}\r")
+      end
+
       # output a starting message
       def report_all_work_begun(files)
         @output.write "Medusa - testing #{files.length} file(s)...\n"

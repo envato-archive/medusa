@@ -8,7 +8,7 @@ module Medusa
         def execute(dungeon, reporter)
           location = dungeon.location
 
-          command = "cd #{location}; bundle --path #{location.join(".bundle")}"
+          command = "cd #{location}; bundle --local --path #{location.join(".bundle")}"
 
           result = run_command(command, reporter)
 
@@ -42,7 +42,7 @@ module Medusa
 
             lines.each do |line|
               next if line.to_s.strip.length == 0
-              reporter.report(Messages::InitializerMessage.new(initializer: "BundleCache", output: line))
+              reporter.report(Messages::ConstructionMessage.new(phase: "BundleCache", output: line))
             end
           end
         end

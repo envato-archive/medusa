@@ -1,5 +1,7 @@
 require 'escort'
 require_relative '../overlord'
+require_relative '../dungeon_discovery'
+require_relative '../keeper'
 require_relative '../drivers/acceptor'
 require_relative '../reporters/log'
 
@@ -94,8 +96,8 @@ module Medusa
 
           overlord.reporters << Medusa::Reporters::RSpecStyle.new
 
-          overlord.plan.blueprints << Blueprints::DumbSync.new
-          overlord.plan.blueprints << Blueprints::BundleCache.new
+          # overlord.plan.blueprints << Blueprints::DumbSync.new
+          # overlord.plan.blueprints << Blueprints::BundleCache.new
           overlord.plan.blueprints << Blueprints::SpecHelper.new
 
           overlord.prepare!
@@ -121,7 +123,7 @@ module Medusa
             ParentTerminationWatcher.termination_thread!
 
             l = Medusa::Labyrinth.new(addr)
-            l.dungeons << Medusa::Dungeon.new(2)
+            l.dungeons << Medusa::Dungeon.new(2, location: "memory")
             l.serve!
           rescue ParentTerminationWatcher::Terminated
           end

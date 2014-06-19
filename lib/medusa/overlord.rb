@@ -85,6 +85,7 @@ module Medusa
       when String then inform_reporters!(:message, message)
       when Messages::TestResult then inform_reporters!(:report_work_result, message)
       when Messages::FileComplete then inform_reporters!(:report_work_complete, message)
+      when Messages::ConstructionMessage then inform_reporters!(:report_construction_information, message)
       else
         @logger.debug("Unkonwn report type: #{message.class.name}")
       end

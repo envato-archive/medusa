@@ -95,8 +95,6 @@ module Medusa
     # payload being the method's arguments. Returns true if there
     # was a free minion, otherwise returns false.
     def delegate(activity, *payload)
-      @logger.debug("Checking for free workers from #{@available_workers.length} available worker(s)...")
-
       worker = @available_workers.pop(true) unless @available_workers.empty?
       return false if worker.nil?
 
@@ -122,6 +120,8 @@ module Medusa
     # as a minion has been trained, it's placed onto the
     # available workers pool.
     def provide_training(training_plan)
+      @logger.debug("Providing training to minions...")
+      
       @workers.each do |workspace|
         Thread.new do
           workspace.train!(training_plan)

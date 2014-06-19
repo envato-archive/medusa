@@ -52,7 +52,6 @@ module Medusa
     def work!(file)
       raise ArgumentError, "You must claim a dungeon first" if @minions_union.nil?
       result = @minions_union.delegate(:work!, file)
-      @logger.debug("Got work request for #{file} = #{result}")
       result
     end
 
