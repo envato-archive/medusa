@@ -19,6 +19,7 @@ Escort::App.create do |app|
     command.options do |opts|
       opts.opt :dungeons, "The number of dungeons to keep in the labyrinth", :short => '-d', :type => :integer, :default => 1
       opts.opt :minions, "The number of minions each dungeons should have", :short => '-m', :type => :integer, :default => 3
+      opts.opt :announce, "Announce a labyrinth on Bonjour", :short => '-a', :type => :string
     end
 
     command.action do |options, arguments|

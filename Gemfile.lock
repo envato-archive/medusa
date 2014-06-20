@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     medusa (0.0.18)
+      dnssd
       escort
       net-ssh
 
@@ -9,10 +10,11 @@ GEM
   remote: https://rubygems.org/
   specs:
     diff-lcs (1.2.5)
+    dnssd (2.0)
     escort (0.4.0)
       nesty
     nesty (1.0.2)
-    net-ssh (2.7.0)
+    net-ssh (2.9.1)
     rake (10.1.0)
     rspec (2.14.1)
       rspec-core (~> 2.14.0)

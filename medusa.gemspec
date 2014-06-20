@@ -17,6 +17,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "escort"
   spec.add_dependency "net-ssh"
+  spec.add_dependency "dnssd"
 
   spec.add_development_dependency "rspec", "~> 2.14"
   spec.add_development_dependency "rake"

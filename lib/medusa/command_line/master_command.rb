@@ -1,3 +1,4 @@
+require 'dnssd'
 require 'escort'
 require_relative '../overlord'
 require_relative '../drivers/acceptor'
